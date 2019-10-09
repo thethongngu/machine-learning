@@ -4,14 +4,13 @@
 
 #include "image.h"
 
-std::istream &Image::operator>>(Image &image) {
-
+Image::Image(const char *data) {
+    for(int i = 0; i < kImageSize; i++) {
+        image_data[i] = data[i];
+    }
 }
 
-void Image::setPixel(unsigned int i, unsigned int j) {
+Image::PixelType &Image::operator[](unsigned int i) {
 
-}
+};
 
-void Image::getPixel(unsigned int i, unsigned int j) {
-
-}

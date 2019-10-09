@@ -10,15 +10,16 @@
 
 class Image {
 public:
-    typedef unsigned int PixelType;
+    typedef int8_t PixelType;
+    const static unsigned int kImageSize = 28 * 28;
 
 public:
-    void getPixel(unsigned int i, unsigned int j);
-    void setPixel(unsigned int i, unsigned int j);
-    std::istream& operator >>(Image& image);
+    Image(const char *data);
+
+    PixelType& operator[](unsigned int i);
 
 private:
-    std::array<PixelType, 28 * 28> image_data;
+    std::array<PixelType, 28 * 28> image_data{};
 
 };
 
