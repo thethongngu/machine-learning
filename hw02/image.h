@@ -10,17 +10,19 @@
 
 class Image {
 public:
-    typedef int8_t PixelType;
+    typedef uint8_t PixelType;
+    typedef uint8_t LabelType;
     const static unsigned int kImageSize = 28 * 28;
 
 public:
-    Image(const char *data);
+    Image(const char *data, uint8_t l);
 
     PixelType& operator[](unsigned int i);
+    LabelType getLabel();
 
 private:
     std::array<PixelType, 28 * 28> image_data{};
-
+    LabelType label{};
 };
 
 

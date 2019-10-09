@@ -19,13 +19,18 @@ auto big_to_small(unsigned int data) {
 
 void read_mnist_data() {
 
-    std::ifstream image_file;
+    std::ifstream image_file, label_file;
     int magic_number, num_images;
     int num_row, num_col;
 
     image_file.open(kMnistTrainImagePath, std::ios::binary);
+    label_file.open(kMnistTrainLabelPath, std::ios::binary);
 
-    if (image_file.is_open()) {
+    if (image_file.is_open() && label_file.is_open()) {
+
+        label_file.read((char *)&magic_number, sizeof(magic_number));
+        label_file.read((char *)&num_images, sizeof(num_images));
+
         image_file.read((char *)&magic_number, sizeof(magic_number));
         image_file.read((char *)&num_images, sizeof(num_images));
         image_file.read((char *)&num_row, sizeof(num_row));
@@ -36,14 +41,16 @@ void read_mnist_data() {
         num_col = big_to_small(num_col);
 
         char *image_data = new char[Image::kImageSize];
+        uint8_t label_data = 0;
         for(int i = 0; i < num_images; i++) {
 
             image_file.read(image_data, sizeof(image_data));
+            label_file.read((char *)label_data, sizeof(label_data));
             for(char *pixel = image_data; pixel < image_data + Image::kImageSize; pixel++) {
                 *pixel = big_to_small(*pixel);
             }
 
-            Image image(image_data);
+            Image image(image_data, label_data);
             images.push_back(image);
         }
     }
