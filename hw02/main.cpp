@@ -3,6 +3,8 @@
 #include <vector>
 #include "image.h"
 
+#define debug(a) std::cout << #a << ": " << a << std::endl
+
 const std::string kMnistTrainImagePath = "../data/train-images-idx3-ubyte";
 const std::string kMnistTrainLabelPath = "../data/train-labels-idx1-ubyte";
 
@@ -40,18 +42,21 @@ void read_mnist_data() {
         num_row = big_to_small(num_row);
         num_col = big_to_small(num_col);
 
-        char *image_data = new char[Image::kImageSize];
-        uint8_t label_data = 0;
-        for(int i = 0; i < num_images; i++) {
+        unsigned char image_data[784];
+        char label_data[1];
+        for(int i = 0; i < 1; i++) {
 
-            image_file.read(image_data, sizeof(image_data));
-            label_file.read((char *)label_data, sizeof(label_data));
-            for(char *pixel = image_data; pixel < image_data + Image::kImageSize; pixel++) {
-                *pixel = big_to_small(*pixel);
-            }
+            image_file.read((char *)image_data, sizeof(image_data));
+            for(int j = 0; j < 28 * 28; j++) std::cout << (int)image_data[j] << std::endl;
 
-            Image image(image_data, label_data);
-            images.push_back(image);
+
+
+            label_file.read(label_data, sizeof(label_data));
+
+
+            debug(label_data);
+//            Image image(image_data, (unsigned int)label_data[0]);
+//            images.push_back(image);
         }
     }
 }
