@@ -19,6 +19,7 @@ public:
     unsigned int get_num_images() const;
     unsigned int get_label(unsigned int i);
     const std::vector<unsigned int> & get_image_id_by_label(unsigned int label_id) const;
+    int get_num_images_by_class(unsigned int label_id) const;
 
 private:
     unsigned int num_image{};

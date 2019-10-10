@@ -79,6 +79,10 @@ const std::vector<unsigned int> & InputData::get_image_id_by_label(unsigned int 
     return label_image_id[label_id];
 }
 
+int InputData::get_num_images_by_class(unsigned int label_id) const {
+    return label_image_id[label_id].size();
+}
+
 unsigned int InputData::get_num_images() const {
     return num_image;
 }
