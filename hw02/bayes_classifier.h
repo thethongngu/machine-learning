@@ -6,8 +6,21 @@
 #define HW02_BAYES_CLASSIFIER_H
 
 
-class BayesClassifier {
+#include "input_data.h"
 
+class NaiveBayesClassifier {
+public:
+    explicit NaiveBayesClassifier();
+
+    double discrete_classify(const InputData& input_data);
+    double continuous_classify();
+
+private:
+    double prob_label[10]{};
+    double label_bin[10][28 * 28][32]{};
+    double total_bin[28 * 28][32]{};
+
+    double discrete_classify(const InputData &input_data);
 };
 
 

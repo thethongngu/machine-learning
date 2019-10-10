@@ -39,7 +39,7 @@ void InputData::read_image_file(const std::string& image_file) {
         unsigned char pixel_data[image_size];
 
         for(unsigned int i = 0; i < num_image; i++) {
-            f.read((char *)pixel_data, sizeof(pixel_data));
+            f.read((char *)&pixel_data, sizeof(pixel_data));
             std::array<unsigned int, 28 * 28> image{};
             for(unsigned int j = 0; j < image_size; j++) image[j] = (unsigned int)pixel_data[j];
             image_data.push_back(image);
@@ -62,14 +62,23 @@ void InputData::read_label_file(const std::string& label_file) {
         for(unsigned int i = 0; i < num_image; i++) {
             f.read(&label, sizeof(label));
             label_data.push_back((unsigned int)label);
+            label_image_id[label_data.back()].push_back(i);
         }
     }
 }
 
-std::array<unsigned int, 784> InputData::get_image(unsigned int i) {
+const std::array<unsigned int, 784> & InputData::get_image(unsigned int i) const {
     return image_data[i];
 }
 
 unsigned int InputData::get_label(unsigned int i) {
     return label_data[i];
+}
+
+const std::vector<unsigned int> & InputData::get_image_id_by_label(unsigned int label_id) const {
+    return label_image_id[label_id];
+}
+
+unsigned int InputData::get_num_images() const {
+    return num_image;
 }

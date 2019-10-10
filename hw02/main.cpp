@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include "input_data.h"
+#include "bayes_classifier.h"
 
 #define debug(a) std::cout << #a << ": " << a << std::endl
 
@@ -10,7 +11,7 @@ const std::string kMnistTrainLabelPath = "../data/train-labels-idx1-ubyte";
 
 int main() {
     InputData input_data(kMnistTrainImagePath, kMnistTrainLabelPath);
-
+    NaiveBayesClassifier discreteClassifer()
 
     return 0;
 }
