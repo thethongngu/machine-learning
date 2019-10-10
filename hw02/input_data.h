@@ -16,6 +16,7 @@ public:
 
     static auto big_to_small_endian(unsigned int data);
     std::array<unsigned int, 784> get_image(unsigned int i);
+    unsigned int get_label(unsigned int i);
 
 private:
     unsigned int num_image{};

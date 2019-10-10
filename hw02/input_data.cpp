@@ -69,3 +69,7 @@ void InputData::read_label_file(const std::string& label_file) {
 std::array<unsigned int, 784> InputData::get_image(unsigned int i) {
     return image_data[i];
 }
+
+unsigned int InputData::get_label(unsigned int i) {
+    return label_data[i];
+}

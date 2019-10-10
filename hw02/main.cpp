@@ -10,6 +10,8 @@ const std::string kMnistTrainLabelPath = "../data/train-labels-idx1-ubyte";
 
 int main() {
     InputData input_data(kMnistTrainImagePath, kMnistTrainLabelPath);
+
+
     return 0;
 }
 
