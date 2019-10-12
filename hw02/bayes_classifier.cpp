@@ -7,74 +7,107 @@
 #include <iomanip>
 #include "bayes_classifier.h"
 
+#define debug(a) std::cout << #a << " = " << a << std::endl
+
 void NaiveBayesClassifier::discrete_classify(const InputData &input_data, const InputData &test_data) {
 
     for (int label = 0; label < 10; label++) {
-        const std::vector<unsigned int> &image_ids = input_data.get_image_id_by_label(label);
+        const std::vector<unsigned int> &image_ids = input_data.GetAllImagesIDByLabel(label);
 
         // for calculating p(x|c)
         for (unsigned int image_id : image_ids) {
-            std::array<unsigned int, 784> image = input_data.get_image(image_id);
-            for (size_t pixel_pos = 0; pixel_pos < image.size(); pixel_pos++) {
-                label_bin[label][pixel_pos][image[pixel_pos] / 8]++;
+            std::array<unsigned int, 784> image = input_data.GetImage(image_id);
+//            for(int i = 0; i < 28; i++) {
+//                for(int j = 0; j < 28; j++) std::cout << std::setw(4) << image[(28 * i) + j];
+//                std::cout << std::endl;
+//            }
+//            std::cout << std::endl;
+
+            for (int pixel = 0; pixel < image.size(); pixel++) {
+                label_bin[label][pixel][image[pixel] / 8]++;
             }
         }
+    }
 
-        // for updating p(x)
-        for (size_t pixel_pos = 0; pixel_pos < 28 * 28; pixel_pos++) {
-            for (size_t bin_pos = 0; bin_pos < 32; bin_pos++) {
-                total_bin[pixel_pos][bin_pos] += label_bin[label][pixel_pos][bin_pos];
+    // Avoid empty bin (log-scale return -inf)
+    auto min_bin = 1000000000;
+    for(int label = 0; label < 10; label++) {
+        for(int pixel = 0; pixel < 28 * 28; pixel++) {
+            for(int bin = 0; bin < 32; bin++) {
+                if (std::fabs(label_bin[label][pixel][bin] - 0.0) > 2.22045e-016) {
+                    min_bin = fmin(min_bin, label_bin[label][pixel][bin]);
+                }
+            }
+        }
+    }
+
+    // for calculating p(x)
+    for(int label = 0; label < 10; label++) {
+        for (int pixel = 0; pixel < 28 * 28; pixel++) {
+            for (int bin = 0; bin < 32; bin++) {
+                label_bin[label][pixel][bin] = fmax(min_bin, label_bin[label][pixel][bin]);
+                total_bin[pixel][bin] += label_bin[label][pixel][bin];
             }
         }
     }
 
     // Calculate probability
-    unsigned int num_images = input_data.get_num_images();
+    unsigned int num_images = input_data.GetNumImages();
     for (int label = 0; label < 10; label++) {
 
-        unsigned int num_class_images = input_data.get_num_images_by_class(label);
+        unsigned int num_class_images = input_data.GetNumImagesByLabel(label);
 
         // p(c)
         prob_c[label] = (double) num_class_images / num_images;
 
         // p(x|c)
-        for (int pixel_pos = 0; pixel_pos < 28 * 28; pixel_pos++) {
-            for (int bin_id = 0; bin_id < 32; bin_id++) {
-                prob_x_c[label][pixel_pos][bin_id] = (double) label_bin[label][pixel_pos][bin_id] / num_class_images;
+        for (int pixel = 0; pixel < 28 * 28; pixel++) {
+            for (int bin = 0; bin < 32; bin++) {
+                prob_x_c[label][pixel][bin] = (double) label_bin[label][pixel][bin] / num_class_images;
             }
         }
 
         // p(x)
-        for (int pixel_pos = 0; pixel_pos < 28 * 28; pixel_pos++) {
-            for (int bin_id = 0; bin_id < 32; bin_id++) {
-                prob_x[pixel_pos][bin_id] = (double) total_bin[pixel_pos][bin_id] / num_images;
+        for (int pixel = 0; pixel < 28 * 28; pixel++) {
+            for (int bin = 0; bin < 32; bin++) {
+                prob_x[pixel][bin] = (double) total_bin[pixel][bin] / num_images;
             }
         }
 
     }
 
-    for (int i = 0; i < 1; i++) {
-        std::array<unsigned int, 784> test_image = test_data.get_image(i);
+    int num_wrong = 0;
+    for (int i = 0; i < test_data.GetNumImages(); i++) {
+        std::cout << "Posterior (in log scale):" << std::endl;
+        std::array<unsigned int, 784> test_image = test_data.GetImage(i);
+        int prediction = 0;
 
-        double marginal = 0.0;
-        for (size_t pixel_pos = 0; pixel_pos < test_image.size(); pixel_pos++) {
-            marginal += log10(prob_x[pixel_pos][test_image[pixel_pos] / 8]);
+        double marginal = 1.0;
+        for (int pixel = 0; pixel < test_image.size(); pixel++) {
+            marginal += log(prob_x[pixel][test_image[pixel] / 8]);
         }
 
-        std::cout << "Posterior (in log scale):" << std::endl;
-
-        double posterior = 0.0;
+        double posterior = 0.0, max_posterior = -1000000000;
         for (int label = 0; label < 10; label++) {
-            double likelihood = 0.0;
-            for (size_t pixel_pos = 0; pixel_pos < test_image.size(); pixel_pos++) {
-                likelihood += log10(prob_x_c[label][pixel_pos][test_image[pixel_pos] / 8]);
+            double likelihood = 1.0;
+            for (int pixel = 0; pixel < test_image.size(); pixel++) {
+                likelihood += log(prob_x_c[label][pixel][test_image[pixel] / 8]);
             }
-            posterior = (likelihood + log10(prob_c[label])) - marginal;
+
+            double prior = log(prob_c[label]);
+            posterior = (likelihood * prior) / marginal;
+            if (posterior > max_posterior) {
+                max_posterior = posterior;
+                prediction = label;
+            }
 
             std::cout << label << ": " << std::setprecision(17) << posterior << std::endl;
         }
-
+        num_wrong += (prediction != test_data.GetLabel(i)) ? 1 : 0;
+        std::cout << "Prediction: " << prediction << ", Ans: " << test_data.GetLabel(i) << std::endl;
     }
+
+    std::cout << "Error rate: " << (double)num_wrong / test_data.GetNumImages() << std::endl;
 }
 
 double NaiveBayesClassifier::continuous_classify() {

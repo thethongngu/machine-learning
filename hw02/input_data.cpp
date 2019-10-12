@@ -4,14 +4,17 @@
 
 #include <fstream>
 #include <array>
+#include <iostream>
 #include "input_data.h"
 
+#define debug(a) std::cout << #a << " = " << a << std::endl
+
 InputData::InputData(const std::string& image_file, const std::string& label_file) {
-    read_image_file(image_file);
-    read_label_file(label_file);
+    ReadImageFile(image_file);
+    ReadLabelFile(label_file);
 }
 
-auto InputData::big_to_small_endian(unsigned int data) {
+auto InputData::ConvertBigToSmallEndian(unsigned int data) {
     unsigned int byte00 = (data & 0x000000ffu) << 24u;
     unsigned int byte01 = (data & 0x0000ff00u) << 8u;
     unsigned int byte02 = (data & 0x00ff0000u) >> 8u;
@@ -20,7 +23,7 @@ auto InputData::big_to_small_endian(unsigned int data) {
     return byte00 | byte01 | byte02 | byte03;
 }
 
-void InputData::read_image_file(const std::string& image_file) {
+void InputData::ReadImageFile(const std::string& image_file) {
 
     std::ifstream f;
     f.open(image_file, std::ios::binary);
@@ -31,9 +34,9 @@ void InputData::read_image_file(const std::string& image_file) {
         f.read((char *) &num_row, sizeof(num_col));
         f.read((char *) &num_col, sizeof(num_col));
 
-        num_image = big_to_small_endian(num_image);
-        num_row = big_to_small_endian(num_row);
-        num_col = big_to_small_endian(num_col);
+        num_image = ConvertBigToSmallEndian(num_image);
+        num_row = ConvertBigToSmallEndian(num_row);
+        num_col = ConvertBigToSmallEndian(num_col);
 
         unsigned int image_size = num_row * num_col;
         unsigned char pixel_data[image_size];
@@ -47,16 +50,14 @@ void InputData::read_image_file(const std::string& image_file) {
     }
 }
 
-void InputData::read_label_file(const std::string& label_file) {
+void InputData::ReadLabelFile(const std::string& label_file) {
     std::ifstream f;
     f.open(label_file, std::ios::binary);
 
     if (f.is_open()) {
-        unsigned int _;
-        f.read((char *) &_, sizeof(_));
-        f.read((char *) &_, sizeof(_));
-        f.read((char *) &_, sizeof(_));
-        f.read((char *) &_, sizeof(_));
+        unsigned int a;
+        f.read((char *) &a, sizeof(a));
+        f.read((char *) &a, sizeof(a));
 
         char label = 0;
         for(unsigned int i = 0; i < num_image; i++) {
@@ -67,22 +68,22 @@ void InputData::read_label_file(const std::string& label_file) {
     }
 }
 
-const std::array<unsigned int, 784> & InputData::get_image(unsigned int i) const {
+const std::array<unsigned int, 784> & InputData::GetImage(unsigned int i) const {
     return image_data[i];
 }
 
-unsigned int InputData::get_label(unsigned int i) {
+unsigned int InputData::GetLabel(unsigned int i) const {
     return label_data[i];
 }
 
-const std::vector<unsigned int> & InputData::get_image_id_by_label(unsigned int label_id) const {
+const std::vector<unsigned int> & InputData::GetAllImagesIDByLabel(unsigned int label_id) const {
     return label_image_id[label_id];
 }
 
-int InputData::get_num_images_by_class(unsigned int label_id) const {
+int InputData::GetNumImagesByLabel(unsigned int label_id) const {
     return label_image_id[label_id].size();
 }
 
-unsigned int InputData::get_num_images() const {
+unsigned int InputData::GetNumImages() const {
     return num_image;
 }
