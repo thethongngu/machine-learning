@@ -12,7 +12,7 @@ class NaiveBayesClassifier {
 public:
     explicit NaiveBayesClassifier();
 
-    void discrete_classify(const InputData& input_data, const InputData& test_data);
+    void discrete_classify(const InputData& input_data, InputData test_data);
     double continuous_classify();
 
 private:
@@ -21,7 +21,6 @@ private:
 
     double prob_c[10] = {0};
     double prob_x_c[10][28 * 28][32] = {0};
-    double prob_x[28 * 28][32] = {0};
 };
 
 

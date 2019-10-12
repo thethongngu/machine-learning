@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <iomanip>
 
 class InputData {
 public:
@@ -20,6 +21,7 @@ public:
     unsigned int GetLabel(unsigned int i) const;
     const std::vector<unsigned int> & GetAllImagesIDByLabel(unsigned int label_id) const;
     int GetNumImagesByLabel(unsigned int label_id) const;
+    void printImage(unsigned int i);
 
 private:
     unsigned int num_image{};

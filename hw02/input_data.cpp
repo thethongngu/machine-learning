@@ -87,3 +87,11 @@ int InputData::GetNumImagesByLabel(unsigned int label_id) const {
 unsigned int InputData::GetNumImages() const {
     return num_image;
 }
+
+void InputData::printImage(unsigned int x) {
+    for(int i = 0; i < 28; i++) {
+        for(int j = 0; j < 28; j++) std::cout << std::setw(4) << image_data[x][(28 * i) + j];
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
