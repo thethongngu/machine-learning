@@ -11,6 +11,10 @@
 
 void NaiveBayesClassifier::discrete_classify(const InputData &input_data, InputData test_data) {
 
+    double label_bin[10][28 * 28][32] = {0};
+    double prob_c[10] = {0};
+    double prob_x_c[10][28 * 28][32] = {0};
+
     for (int label = 0; label < 10; label++) {
         const std::vector<unsigned int> &image_ids = input_data.GetAllImagesIDByLabel(label);
 
@@ -85,17 +89,18 @@ void NaiveBayesClassifier::discrete_classify(const InputData &input_data, InputD
         }
 
         std::cout << "Posterior (in log scale):" << std::endl;
-        for(int k = 0; k < 10; k++) {
+        for (int k = 0; k < 10; k++) {
             std::cout << k << ": " << std::setprecision(17) << posteriors[k] / sum << std::endl;
         }
         num_wrong += (prediction != test_data.GetLabel(i)) ? 1 : 0;
         std::cout << "Prediction: " << prediction << ", Ans: " << test_data.GetLabel(i) << std::endl;
     }
 
-    for(int label = 0; label < 10; label++) {
+    // Print imagination number
+    for (int label = 0; label < 10; label++) {
         std::cout << label << ": " << std::endl;
-        for(int i = 0; i < 28; i++) {
-            for(int j = 0; j < 28; j++) {
+        for (int i = 0; i < 28; i++) {
+            for (int j = 0; j < 28; j++) {
                 double white = 0.0;
                 double black = 0.0;
                 for (int bin = 0; bin < 16; bin++) white += prob_x_c[label][(28 * i) + j][bin];
@@ -115,8 +120,8 @@ void NaiveBayesClassifier::discrete_classify(const InputData &input_data, InputD
     std::cout << "Error rate: " << std::setprecision(4) << (double) num_wrong / test_data.GetNumImages() << std::endl;
 }
 
-double NaiveBayesClassifier::continuous_classify() {
-    return 0;
+double NaiveBayesClassifier::continuous_classify(const InputData& input_data, InputData test_data) {
+
 }
 
 NaiveBayesClassifier::NaiveBayesClassifier() = default;
