@@ -17,6 +17,7 @@ int main() {
     InputData test_data(kMnistTestImagePath, kMnistTestLabelPath);
 
     int option = 0;
+    std::cout << "Input discrete (0), continuous (1): ";
     std::cin >> option;
     if (option == 0) {
         NaiveBayesClassifier::discrete_classify(input_data, test_data);
