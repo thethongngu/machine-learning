@@ -92,6 +92,26 @@ void NaiveBayesClassifier::discrete_classify(const InputData &input_data, InputD
         std::cout << "Prediction: " << prediction << ", Ans: " << test_data.GetLabel(i) << std::endl;
     }
 
+    for(int label = 0; label < 10; label++) {
+        std::cout << label << ": " << std::endl;
+        for(int i = 0; i < 28; i++) {
+            for(int j = 0; j < 28; j++) {
+                double white = 0.0;
+                double black = 0.0;
+                for (int bin = 0; bin < 16; bin++) white += prob_x_c[label][(28 * i) + j][bin];
+                for (int bin = 16; bin < 32; bin++) black += prob_x_c[label][(28 * i) + j][bin];
+
+                if (black >= white) {
+                    std::cout << " 1";
+                } else {
+                    std::cout << " 0";
+                }
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
     std::cout << "Error rate: " << std::setprecision(4) << (double) num_wrong / test_data.GetNumImages() << std::endl;
 }
 
