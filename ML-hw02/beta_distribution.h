@@ -9,6 +9,8 @@
 class BetaDistribution {
 public:
     static void fit(const std::string& data_file);
+    static double fac(double x);
+    static double pow(double x, double y);
 };
 
 
