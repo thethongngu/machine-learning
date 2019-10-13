@@ -8,8 +8,6 @@
 #include <cmath>
 #include "beta_distribution.h"
 
-
-
 void BetaDistribution::fit(const std::string& data_file) {
     std::ifstream f;
     f.open(data_file);

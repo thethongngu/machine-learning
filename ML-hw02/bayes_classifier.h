@@ -13,7 +13,7 @@ public:
     explicit NaiveBayesClassifier();
 
     static void discrete_classify(const InputData& input_data, InputData test_data);
-    double continuous_classify(const InputData& input_data, InputData test_data);
+    static double continuous_classify(const InputData& input_data, InputData test_data);
 };
 
 

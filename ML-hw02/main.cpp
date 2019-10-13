@@ -1,5 +1,4 @@
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include "input_data.h"
 #include "bayes_classifier.h"
@@ -17,7 +16,14 @@ int main() {
     InputData input_data(kMnistTrainImagePath, kMnistTrainLabelPath);
     InputData test_data(kMnistTestImagePath, kMnistTestLabelPath);
 
-//    NaiveBayesClassifier::discrete_classify(input_data, test_data);
+    int option = 0;
+    std::cin >> option;
+    if (option == 0) {
+        NaiveBayesClassifier::discrete_classify(input_data, test_data);
+    } else {
+        NaiveBayesClassifier::continuous_classify(input_data, test_data);
+    }
+
     BetaDistribution::fit(betaDataFile);
     return 0;
 }
