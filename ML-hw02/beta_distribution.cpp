@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <cmath>
+#include <iomanip>
 #include "beta_distribution.h"
 
 void BetaDistribution::fit(const std::string& data_file) {

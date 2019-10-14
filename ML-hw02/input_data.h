@@ -21,7 +21,7 @@ public:
     unsigned int GetLabel(unsigned int i) const;
     const std::vector<unsigned int> & GetAllImagesIDByLabel(unsigned int label_id) const;
     int GetNumImagesByLabel(unsigned int label_id) const;
-    void printImage(unsigned int i);
+    void printImage(unsigned int i) const;
 
 private:
     unsigned int num_image{};
