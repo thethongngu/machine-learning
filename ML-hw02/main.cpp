@@ -25,7 +25,7 @@ int main() {
         NaiveBayesClassifier::continuous_classify(input_data, test_data);
     }
 
-//    BetaDistribution::fit(betaDataFile);
+    BetaDistribution::fit(betaDataFile);
     return 0;
 }
 

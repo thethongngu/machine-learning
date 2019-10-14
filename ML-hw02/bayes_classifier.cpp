@@ -11,9 +11,20 @@
 
 void NaiveBayesClassifier::discrete_classify(const InputData &input_data, const InputData& test_data) {
 
-    double label_bin[10][28 * 28][32] = {0};
-    double prob_c[10] = {0};
-    double prob_x_c[10][28 * 28][32] = {0};
+    double label_bin[10][28 * 28][32];
+    double prob_c[10];
+    double prob_x_c[10][28 * 28][32];
+
+    for(int label = 0; label < 10; label++) {
+        for(int pixel = 0; pixel < 28 * 28; pixel++) {
+            for(int bin = 0; bin < 32; bin++) {
+                label_bin[label][pixel][bin] = 0;
+                prob_x_c[label][pixel][bin] = 0;
+            }
+        }
+    }
+
+    for(int i = 0; i < 10; i++) prob_c[i] = 0;
 
     for (int label = 0; label < 10; label++) {
         const std::vector<unsigned int> &image_ids = input_data.GetAllImagesIDByLabel(label);
@@ -168,12 +179,14 @@ void NaiveBayesClassifier::continuous_classify(const InputData& input_data, cons
         }
     }
 
-//    double eps = 0;
-//    for(int label = 0; label < 10; label++) {
-//        for(int pixel = 0; pixel < 28 * 28; pixel++) {
-//            variance[label][pixel] += eps;
-//        }
-//    }
+    double eps = 1;
+    for(int label = 0; label < 10; label++) {
+        for(int pixel = 0; pixel < 28 * 28; pixel++) {
+            if (variance[label][pixel] == 0) {
+                variance[label][pixel] = eps;
+            }
+        }
+    }
 
     int num_wrong = 0;
     int num_test_images = test_data.GetNumImages();
@@ -191,7 +204,6 @@ void NaiveBayesClassifier::continuous_classify(const InputData& input_data, cons
             double likelihood = 0.0;
 
             for (int pixel = 0; pixel < 28 * 28; pixel++) {
-                if (variance[label][pixel] == 0) continue;
                 double a = log((1.0) / (std::sqrt(2 * PI * variance[label][pixel])));
                 double b = ((test_image[pixel] - mean[label][pixel]) * (test_image[pixel] - mean[label][pixel])) / (2.0 * variance[label][pixel]);
                 likelihood += (a - b);
