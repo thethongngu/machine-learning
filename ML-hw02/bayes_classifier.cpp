@@ -179,7 +179,7 @@ void NaiveBayesClassifier::continuous_classify(const InputData& input_data, cons
         }
     }
 
-    double eps = 1;
+    double eps = 500;
     for(int label = 0; label < 10; label++) {
         for(int pixel = 0; pixel < 28 * 28; pixel++) {
             if (variance[label][pixel] == 0) {
