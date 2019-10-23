@@ -40,15 +40,16 @@ class SequentialEstimation:
         self.dist = dist
 
     def estimate(self):
-        print("Data point source function: N(" + str(self.dist.mean) + "," + str(self.dist.variance) + ")")
+        print("Data point source function: N(%s, %s)" % (self.dist.mean, self.dist.variance))
 
         mean, variance = 0.0, 0.0
 
-        for n in range(1, 1000):
+        for n in range(1, 10000):
             x = self.dist.sample()
+
             new_mean = float(x + mean * (n - 1)) / n
-            new_variance = np.square(variance) + np.square(mean) - np.square(new_mean) + \
-                           ((np.square(x) - np.square(variance) - np.square(mean)) / n)
+            new_variance = variance + np.square(mean) - np.square(new_mean) + \
+                           ((np.square(x) - variance - np.square(mean)) / n)
             mean = new_mean
             variance = new_variance
 
