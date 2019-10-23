@@ -34,5 +34,33 @@ class PolynomialBasicLinearDataGenerator:
         return y + self.error.sample()
 
 
+class SequentialEstimation:
+
+    def __init__(self, dist):
+        self.dist = dist
+
+    def estimate(self):
+        print("Data point source function: N(" + str(self.dist.mean) + "," + str(self.dist.variance) + ")")
+
+        mean, variance = 0.0, 0.0
+
+        for n in range(1, 1000):
+            x = self.dist.sample()
+            new_mean = float(x + mean * (n - 1)) / n
+            new_variance = np.square(variance) + np.square(mean) - np.square(new_mean) + \
+                           ((np.square(x) - np.square(variance) - np.square(mean)) / n)
+            mean = new_mean
+            variance = new_variance
+
+            print("Add data point: %s" % x)
+            print("Mean = %s   Variance = %s" % (mean, variance))
+
+
 if __name__ == '__main__':
     print("Machine Learning - HW03")
+
+    print("Input (m, s): ", end="")
+    m, s = [float(i) for i in input().split()]
+    normal_distribution = UnivariateGaussianDataGenerator(m, s)
+    answer02 = SequentialEstimation(normal_distribution)
+    answer02.estimate()
