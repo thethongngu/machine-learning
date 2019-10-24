@@ -11,9 +11,20 @@
 
 void NaiveBayesClassifier::discrete_classify(const InputData &input_data, const InputData& test_data) {
 
-    double label_bin[10][28 * 28][32] = {0};
-    double prob_c[10] = {0};
-    double prob_x_c[10][28 * 28][32] = {0};
+    double label_bin[10][28 * 28][32];
+    double prob_c[10];
+    double prob_x_c[10][28 * 28][32];
+
+    for(int label = 0; label < 10; label++) {
+        for(int pixel = 0; pixel < 28 * 28; pixel++) {
+            for(int bin = 0; bin < 32; bin++) {
+                label_bin[label][pixel][bin] = 0;
+                prob_x_c[label][pixel][bin] = 0;
+            }
+        }
+    }
+
+    for(int i = 0; i < 10; i++) prob_c[i] = 0;
 
     for (int label = 0; label < 10; label++) {
         const std::vector<unsigned int> &image_ids = input_data.GetAllImagesIDByLabel(label);
@@ -126,9 +137,15 @@ void NaiveBayesClassifier::continuous_classify(const InputData& input_data, cons
     double pixel_squared[10][28 * 28];
     double variance[10][28 * 28];
 
+    for(int label = 0; label < 10; label++) {
+        for(int pixel = 0; pixel < 28 * 28; pixel++) {
+            mean[label][pixel] = 0.0;
+            variance[label][pixel] = 0.0;
+        }
+    }
+
     for (int label = 0; label < 10; label++) {
         const std::vector<unsigned int> &image_ids = input_data.GetAllImagesIDByLabel(label);
-
         for (unsigned int image_id : image_ids) {
             std::array<unsigned int, 784> image = input_data.GetImage(image_id);
             for (int pixel = 0; pixel < image.size(); pixel++) {
@@ -138,25 +155,36 @@ void NaiveBayesClassifier::continuous_classify(const InputData& input_data, cons
         }
     }
 
-    double min_variance[10] = {1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000};
     for(int label = 0; label < 10; label++) {
         int num_class_images = input_data.GetNumImagesByLabel(label);
-
         for(int pixel = 0; pixel < 28 * 28; pixel++) {
             mean[label][pixel] /= num_class_images;
-            pixel_squared[label][pixel] /= num_class_images;
-            variance[label][pixel] = pixel_squared[label][pixel] - (mean[label][pixel] * mean[label][pixel]);
+        }
+    }
 
-            if (std::fabs(variance[label][pixel]) > 2.22045e-016) {
-                min_variance[label] = fmin(min_variance[label], variance[label][pixel]);
+    for(int label = 0; label < 10; label++) {
+        const std::vector<unsigned int> &image_ids = input_data.GetAllImagesIDByLabel(label);
+        for (unsigned int image_id : image_ids) {
+            std::array<unsigned int, 784> image = input_data.GetImage(image_id);
+            for (int pixel = 0; pixel < image.size(); pixel++) {
+                variance[label][pixel] += (image[pixel] - mean[label][pixel]) * (image[pixel] - mean[label][pixel]);
             }
         }
     }
 
     for(int label = 0; label < 10; label++) {
+        int num_class_images = input_data.GetNumImagesByLabel(label);
         for(int pixel = 0; pixel < 28 * 28; pixel++) {
-            variance[label][pixel] = fmax(variance[label][pixel], min_variance[label]);
-//            if (variance[label][pixel] == 0) variance[label][pixel] = 1;
+            variance[label][pixel] /= (num_class_images);
+        }
+    }
+
+    double eps = 500;
+    for(int label = 0; label < 10; label++) {
+        for(int pixel = 0; pixel < 28 * 28; pixel++) {
+            if (variance[label][pixel] == 0) {
+                variance[label][pixel] = eps;
+            }
         }
     }
 
@@ -176,8 +204,8 @@ void NaiveBayesClassifier::continuous_classify(const InputData& input_data, cons
             double likelihood = 0.0;
 
             for (int pixel = 0; pixel < 28 * 28; pixel++) {
-                double a = log(1.0 / (std::sqrt(2 * PI * variance[label][pixel])));
-                double b = ((double)(test_image[pixel] - mean[label][pixel]) * (test_image[pixel] - mean[label][pixel])) / (2 * variance[label][pixel]);
+                double a = log((1.0) / (std::sqrt(2 * PI * variance[label][pixel])));
+                double b = ((test_image[pixel] - mean[label][pixel]) * (test_image[pixel] - mean[label][pixel])) / (2.0 * variance[label][pixel]);
                 likelihood += (a - b);
             }
 
@@ -197,6 +225,23 @@ void NaiveBayesClassifier::continuous_classify(const InputData& input_data, cons
         num_wrong += (prediction != test_data.GetLabel(i)) ? 1 : 0;
         std::cout << "Prediction: " << prediction << ", Ans: " << test_data.GetLabel(i) << std::endl << std::endl;
     }
+
+    // Print imagination number
+    for (int label = 0; label < 10; label++) {
+        std::cout << label << ": " << std::endl;
+        for (int i = 0; i < 28; i++) {
+            for (int j = 0; j < 28; j++) {
+                if (mean[label][(28 * i) + j] >= 128) {
+                    std::cout << " 1";
+                } else {
+                    std::cout << " 0";
+                }
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
     std::cout << "Error rate: " << std::setprecision(4) << (double) num_wrong / test_data.GetNumImages() << std::endl;
 }
 
