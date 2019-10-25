@@ -57,11 +57,31 @@ class SequentialEstimation:
             print("Mean = %s   Variance = %s" % (mean, variance))
 
 
+class BayesianLinearRegression:
+
+    def __init__(self, generator, b):
+        self.generator = generator
+        self.prior =
+
 if __name__ == '__main__':
     print("Machine Learning - HW03")
 
+# ------------- Answer 02 --------------------- #
     print("Input (m, s): ", end="")
     m, s = [float(i) for i in input().split()]
+
     normal_distribution = UnivariateGaussianDataGenerator(m, s)
     answer02 = SequentialEstimation(normal_distribution)
     answer02.estimate()
+
+# ------------- Answer 03 --------------------- #
+    print("Input n:", end="")
+    n = int(input())
+    print("Input a:", end="")
+    a = int(input())
+    print("Input w:", end="")
+    w = input()
+    print("Input b:", end="")
+    b = int(input())
+
+    prior = UnivariateGaussianDataGenerator(0, )
