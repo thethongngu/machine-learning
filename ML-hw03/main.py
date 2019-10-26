@@ -75,7 +75,7 @@ class BayesianLinearRegression:
 
     def estimate(self):
         mean = Matrix(self.n, 1)
-        variance = Matrix.get_identity_matrix(n).mul_scalar(1 / self.b)
+        variance = Matrix.get_identity_matrix(n).mul_scalar(1.0 / self.b)
         x_data = []
         y_data = []
         mean_10 = mean
@@ -83,17 +83,17 @@ class BayesianLinearRegression:
         variance_10 = variance
         variance_50 = variance
 
-        for i in range(1000):
+        for i in range(150):
             x, y = self.generator.sample()
             x_data.append(x.e[1][0])
             y_data.append(y)
 
             old_variance_inv = variance.inverse()
-            variance = old_variance_inv.add_matrix(x.mul_matrix(x.tranpose()).mul_scalar(self.a)).inverse()
-            mean = variance.mul_matrix(old_variance_inv.mul_matrix(mean).add_matrix(x.mul_scalar(y * self.a)))
+            variance = old_variance_inv.add_matrix(x.mul_matrix(x.tranpose()).mul_scalar(1.0 / self.a)).inverse()
+            mean = variance.mul_matrix(old_variance_inv.mul_matrix(mean).add_matrix(x.mul_scalar(y * (1.0 / self.a))))
 
             predictive_mean = mean.tranpose().mul_matrix(x).e[0][0]
-            predictive_variance = x.tranpose().mul_matrix(variance.mul_matrix(x)).e[0][0] + float(1.0 / self.a)
+            predictive_variance = x.tranpose().mul_matrix(variance.mul_matrix(x)).e[0][0] + self.a
 
             if i == 10:
                 mean_10 = mean
@@ -116,23 +116,23 @@ class BayesianLinearRegression:
         graph01 = axs[0][0]
         graph01.set_title('Ground truth')
         graph01.set_xlim(-2.0, 2.0)
-        graph01.set_ylim(-20, 20)
+        graph01.set_ylim(-14, 22)
         ground_f = np.poly1d([row[0] for row in np.flip(self.w.e)])
         x = np.linspace(-2.0, 2.0, 30)
         y = ground_f(x)
         graph01.plot(x, y, color='black')
 
-        y_upper_var = ground_f(x) + (1.0 / self.b)
+        y_upper_var = ground_f(x) + self.a
         graph01.plot(x, y_upper_var, color='red')
 
-        y_lower_var = ground_f(x) - (1.0 / self.b)
+        y_lower_var = ground_f(x) - self.a
         graph01.plot(x, y_lower_var, color='red')
 
         # -------------------- graph 02 --------------------------
         graph02 = axs[0][1]
         graph02.set_title('Predict result')
         graph02.set_xlim(-2.0, 2.0)
-        graph02.set_ylim(-20, 20)
+        graph02.set_ylim(-14, 22)
         graph02.scatter(x_data, y_data, color="blue")
         x = np.linspace(-2.0, 2.0, 30)
         predict_f = np.poly1d([row[0] for row in np.flip(mean.e)])
@@ -150,10 +150,10 @@ class BayesianLinearRegression:
                 basic *= x[i]
 
             upper_variance.append(
-                predict_y[i] + x_bold.tranpose().mul_matrix(variance.mul_matrix(x_bold)).e[0][0] + float(1.0 / self.a)
+                predict_y[i] + (x_bold.tranpose().mul_matrix(variance.mul_matrix(x_bold)).e[0][0] + self.a)
             )
             lower_variance.append(
-                predict_y[i] - x_bold.tranpose().mul_matrix(variance.mul_matrix(x_bold)).e[0][0] - float(1.0 / self.a)
+                predict_y[i] - (x_bold.tranpose().mul_matrix(variance.mul_matrix(x_bold)).e[0][0] + self.a)
             )
 
         graph02.plot(x, upper_variance, color='red')
@@ -163,7 +163,7 @@ class BayesianLinearRegression:
         graph03 = axs[1][0]
         graph03.set_title('After 10 incomes')
         graph03.set_xlim(-2.0, 2.0)
-        graph03.set_ylim(-20, 20)
+        graph03.set_ylim(-14, 22)
         graph03.scatter(x_data[:10], y_data[:10], color="blue")
         x = np.linspace(-2.0, 2.0, 30)
         predict_f = np.poly1d([row[0] for row in np.flip(mean_10.e)])
@@ -181,12 +181,10 @@ class BayesianLinearRegression:
                 basic *= x[i]
 
             upper_variance.append(
-                predict_y[i] + x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] + float(
-                    1.0 / self.a)
+                predict_y[i] + (x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] + self.a)
             )
             lower_variance.append(
-                predict_y[i] - x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] - float(
-                    1.0 / self.a)
+                predict_y[i] - (x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] + self.a)
             )
         graph03.plot(x, upper_variance, color='red')
         graph03.plot(x, lower_variance, color='red')
@@ -196,7 +194,7 @@ class BayesianLinearRegression:
         graph04.set_title('After 50 incomes')
 
         graph04.set_xlim(-2.0, 2.0)
-        graph04.set_ylim(-20, 20)
+        graph04.set_ylim(-14, 22)
         graph04.scatter(x_data[: 50], y_data[: 50], color="blue")
         x = np.linspace(-2.0, 2.0, 30)
         predict_f = np.poly1d([row[0] for row in np.flip(mean_50.e)])
@@ -214,12 +212,10 @@ class BayesianLinearRegression:
                 basic *= x[i]
 
             upper_variance.append(
-                predict_y[i] + x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] + float(
-                    1.0 / self.b)
+                predict_y[i] + (x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] + self.a)
             )
             lower_variance.append(
-                predict_y[i] - x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] - float(
-                    1.0 / self.b)
+                predict_y[i] - (x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] + self.a)
             )
         graph04.plot(x, upper_variance, color='red')
         graph04.plot(x, lower_variance, color='red')
