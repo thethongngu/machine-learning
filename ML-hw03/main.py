@@ -50,12 +50,12 @@ class SequentialEstimation:
 
         mean, variance = 0.0, 0.0
 
-        for n in range(1, 10000):
+        for sample_size in range(1, 10000):
             x = self.dist.sample()
 
-            new_mean = float(x + mean * (n - 1)) / n
+            new_mean = float(x + mean * (sample_size - 1)) / sample_size
             new_variance = variance + np.square(mean) - np.square(new_mean) + \
-                           ((np.square(x) - variance - np.square(mean)) / n)
+                           ((np.square(x) - variance - np.square(mean)) / sample_size)
             mean = new_mean
             variance = new_variance
 
@@ -122,12 +122,10 @@ class BayesianLinearRegression:
         y = ground_f(x)
         graph01.plot(x, y, color='black')
 
-        upper_var_f = np.poly1d([row[0] for row in np.flip(self.w.e)])
-        y_upper_var = upper_var_f(x) + (1.0 / self.a)
+        y_upper_var = ground_f(x) + (1.0 / self.b)
         graph01.plot(x, y_upper_var, color='red')
 
-        lower_var_f = np.poly1d([row[0] for row in np.flip(self.w.e)])
-        y_lower_var = lower_var_f(x) - (1.0 / self.a)
+        y_lower_var = ground_f(x) - (1.0 / self.b)
         graph01.plot(x, y_lower_var, color='red')
 
         # -------------------- graph 02 --------------------------
@@ -183,10 +181,12 @@ class BayesianLinearRegression:
                 basic *= x[i]
 
             upper_variance.append(
-                predict_y[i] + x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] + float(1.0 / self.a)
+                predict_y[i] + x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] + float(
+                    1.0 / self.a)
             )
             lower_variance.append(
-                predict_y[i] - x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] - float(1.0 / self.a)
+                predict_y[i] - x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] - float(
+                    1.0 / self.a)
             )
         graph03.plot(x, upper_variance, color='red')
         graph03.plot(x, lower_variance, color='red')
@@ -214,10 +214,12 @@ class BayesianLinearRegression:
                 basic *= x[i]
 
             upper_variance.append(
-                predict_y[i] + x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] + float(1.0 / self.a)
+                predict_y[i] + x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] + float(
+                    1.0 / self.b)
             )
             lower_variance.append(
-                predict_y[i] - x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] - float(1.0 / self.a)
+                predict_y[i] - x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] - float(
+                    1.0 / self.b)
             )
         graph04.plot(x, upper_variance, color='red')
         graph04.plot(x, lower_variance, color='red')
@@ -231,29 +233,24 @@ if __name__ == '__main__':
     print()
 
     # ------------- Answer 02 --------------------- #
-    #     print("Input (m, s): ", end=" ")
-    #     m, s = [float(i) for i in input().split()]
-    #
-    #     normal_distribution = UnivariateGaussianDataGenerator(m, s)
-    #     answer02 = SequentialEstimation(normal_distribution)
-    #     answer02.estimate()
+    print("Input (m, s): ", end=" ")
+    m, s = [float(i) for i in input().split()]
+
+    normal_distribution = UnivariateGaussianDataGenerator(m, s)
+    answer02 = SequentialEstimation(normal_distribution)
+    answer02.estimate()
 
     # ------------- Answer 03 --------------------- #
-    #     print("Input n:", end=" ")
-    #     n = int(input())
-    #     print("Input a:", end=" ")
-    #     a = int(input())
-    #     print("Input w:", end=" ")
-    #     elements = [[float(i)] for i in input().split()]]
-    #     w = Matrix(n, 1).set_elements(elements)
-    #     print("Input b:", end=" ")
-    #     b = int(input())
-
-    n = 4
-    a = 1.0
+    print("Input n:", end=" ")
+    n = int(input())
+    print("Input a:", end=" ")
+    a = int(input())
+    print("Input w:", end=" ")
+    elements = [[float(i)] for i in input().split()]
     w = Matrix(n, 1)
-    w.set_elements([[1], [2], [3], [4]])
-    b = 1.0
+    w.set_elements(elements)
+    print("Input b:", end=" ")
+    b = int(input())
 
     answer03 = BayesianLinearRegression(b, n, a, w)
     answer03.estimate()
