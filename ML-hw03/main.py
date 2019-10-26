@@ -63,6 +63,7 @@ class SequentialEstimation:
             print("Mean = %s   Variance = %s" % (mean, variance))
 
 
+# noinspection DuplicatedCode
 class BayesianLinearRegression:
 
     def __init__(self, b, n, a, w):
@@ -77,8 +78,12 @@ class BayesianLinearRegression:
         variance = Matrix.get_identity_matrix(n).mul_scalar(1 / self.b)
         x_data = []
         y_data = []
+        mean_10 = mean
+        mean_50 = mean
+        variance_10 = variance
+        variance_50 = variance
 
-        for i in range(100):
+        for i in range(1000):
             x, y = self.generator.sample()
             x_data.append(x.e[1][0])
             y_data.append(y)
@@ -90,6 +95,13 @@ class BayesianLinearRegression:
             predictive_mean = mean.tranpose().mul_matrix(x).e[0][0]
             predictive_variance = x.tranpose().mul_matrix(variance.mul_matrix(x)).e[0][0] + float(1.0 / self.a)
 
+            if i == 10:
+                mean_10 = mean
+                variance_10 = variance
+            if i == 50:
+                mean_50 = mean
+                variance_50 = variance
+
             print("Add data point (%s, %s):" % (x.e[1][0], y), end="\n\n")
             print("Posterior mean:")
             print(mean)
@@ -100,6 +112,7 @@ class BayesianLinearRegression:
 
         fig, axs = plt.subplots(2, 2)
 
+        # ------------- graph 01 ---------------------
         graph01 = axs[0][0]
         graph01.set_title('Ground truth')
         graph01.set_xlim(-2.0, 2.0)
@@ -110,28 +123,104 @@ class BayesianLinearRegression:
         graph01.plot(x, y, color='black')
 
         upper_var_f = np.poly1d([row[0] for row in np.flip(self.w.e)])
-        y_upper_var = upper_var_f(x) + self.a
+        y_upper_var = upper_var_f(x) + (1.0 / self.a)
         graph01.plot(x, y_upper_var, color='red')
 
         lower_var_f = np.poly1d([row[0] for row in np.flip(self.w.e)])
-        y_lower_var = lower_var_f(x) - self.a
+        y_lower_var = lower_var_f(x) - (1.0 / self.a)
         graph01.plot(x, y_lower_var, color='red')
 
+        # -------------------- graph 02 --------------------------
         graph02 = axs[0][1]
         graph02.set_title('Predict result')
         graph02.set_xlim(-2.0, 2.0)
         graph02.set_ylim(-20, 20)
         graph02.scatter(x_data, y_data, color="blue")
-        predict_f = np.poly1d([row[0] for row in np.flip(self.mean.e)])
+        x = np.linspace(-2.0, 2.0, 30)
+        predict_f = np.poly1d([row[0] for row in np.flip(mean.e)])
+        predict_y = predict_f(x)
+        graph02.plot(x, predict_y, color="black")
 
-        # axs[1, 0].plot(x, -y, 'tab:green')
-        axs[1, 0].set_title('After 10 incomes')
-        # axs[1, 1].plot(x, -y, 'tab:red')
-        axs[1, 1].set_title('After 50 incomes')
+        upper_variance = []
+        lower_variance = []
+        for i in range(len(x)):
+            x_bold = Matrix(self.n, 1)
 
-        # Hide x labels and tick labels for top plots and y ticks for right plots.
-        for ax in axs.flat:
-            ax.label_outer()
+            basic = 1.0
+            for j in range(self.n):
+                x_bold.set_element(j, 0, basic)
+                basic *= x[i]
+
+            upper_variance.append(
+                predict_y[i] + x_bold.tranpose().mul_matrix(variance.mul_matrix(x_bold)).e[0][0] + float(1.0 / self.a)
+            )
+            lower_variance.append(
+                predict_y[i] - x_bold.tranpose().mul_matrix(variance.mul_matrix(x_bold)).e[0][0] - float(1.0 / self.a)
+            )
+
+        graph02.plot(x, upper_variance, color='red')
+        graph02.plot(x, lower_variance, color='red')
+
+        # --------------------- graph03 ------------------------
+        graph03 = axs[1][0]
+        graph03.set_title('After 10 incomes')
+        graph03.set_xlim(-2.0, 2.0)
+        graph03.set_ylim(-20, 20)
+        graph03.scatter(x_data[:10], y_data[:10], color="blue")
+        x = np.linspace(-2.0, 2.0, 30)
+        predict_f = np.poly1d([row[0] for row in np.flip(mean_10.e)])
+        predict_y = predict_f(x)
+        graph03.plot(x, predict_y, color="black")
+
+        upper_variance = []
+        lower_variance = []
+        for i in range(len(x)):
+            x_bold = Matrix(self.n, 1)
+
+            basic = 1.0
+            for j in range(self.n):
+                x_bold.set_element(j, 0, basic)
+                basic *= x[i]
+
+            upper_variance.append(
+                predict_y[i] + x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] + float(1.0 / self.a)
+            )
+            lower_variance.append(
+                predict_y[i] - x_bold.tranpose().mul_matrix(variance_10.mul_matrix(x_bold)).e[0][0] - float(1.0 / self.a)
+            )
+        graph03.plot(x, upper_variance, color='red')
+        graph03.plot(x, lower_variance, color='red')
+
+        # -------------------- graph04 ------------------------------
+        graph04 = axs[1][1]
+        graph04.set_title('After 50 incomes')
+
+        graph04.set_xlim(-2.0, 2.0)
+        graph04.set_ylim(-20, 20)
+        graph04.scatter(x_data[: 50], y_data[: 50], color="blue")
+        x = np.linspace(-2.0, 2.0, 30)
+        predict_f = np.poly1d([row[0] for row in np.flip(mean_50.e)])
+        predict_y = predict_f(x)
+        graph04.plot(x, predict_y, color="black")
+
+        upper_variance = []
+        lower_variance = []
+        for i in range(len(x)):
+            x_bold = Matrix(self.n, 1)
+
+            basic = 1.0
+            for j in range(self.n):
+                x_bold.set_element(j, 0, basic)
+                basic *= x[i]
+
+            upper_variance.append(
+                predict_y[i] + x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] + float(1.0 / self.a)
+            )
+            lower_variance.append(
+                predict_y[i] - x_bold.tranpose().mul_matrix(variance_50.mul_matrix(x_bold)).e[0][0] - float(1.0 / self.a)
+            )
+        graph04.plot(x, upper_variance, color='red')
+        graph04.plot(x, lower_variance, color='red')
 
         fig.show()
 
