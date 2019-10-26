@@ -1,5 +1,7 @@
-from Matrix import Matrix
+import matplotlib.pyplot as plt
 import numpy as np
+
+from matrix import Matrix
 
 
 class UnivariateGaussianDataGenerator:
@@ -73,9 +75,13 @@ class BayesianLinearRegression:
     def estimate(self):
         mean = Matrix(self.n, 1)
         variance = Matrix.get_identity_matrix(n).mul_scalar(1 / self.b)
+        x_data = []
+        y_data = []
 
-        for i in range(1000):
+        for i in range(100):
             x, y = self.generator.sample()
+            x_data.append(x.e[1][0])
+            y_data.append(y)
 
             old_variance_inv = variance.inverse()
             variance = old_variance_inv.add_matrix(x.mul_matrix(x.tranpose()).mul_scalar(self.a)).inverse()
@@ -91,6 +97,43 @@ class BayesianLinearRegression:
             print(variance)
             print("Predictive distribution ~ N(%s, %s)" % (predictive_mean, predictive_variance))
             print("-------------------------------------------------------------------")
+
+        fig, axs = plt.subplots(2, 2)
+
+        graph01 = axs[0][0]
+        graph01.set_title('Ground truth')
+        graph01.set_xlim(-2.0, 2.0)
+        graph01.set_ylim(-20, 20)
+        ground_f = np.poly1d([row[0] for row in np.flip(self.w.e)])
+        x = np.linspace(-2.0, 2.0, 30)
+        y = ground_f(x)
+        graph01.plot(x, y, color='black')
+
+        upper_var_f = np.poly1d([row[0] for row in np.flip(self.w.e)])
+        y_upper_var = upper_var_f(x) + self.a
+        graph01.plot(x, y_upper_var, color='red')
+
+        lower_var_f = np.poly1d([row[0] for row in np.flip(self.w.e)])
+        y_lower_var = lower_var_f(x) - self.a
+        graph01.plot(x, y_lower_var, color='red')
+
+        graph02 = axs[0][1]
+        graph02.set_title('Predict result')
+        graph02.set_xlim(-2.0, 2.0)
+        graph02.set_ylim(-20, 20)
+        graph02.scatter(x_data, y_data, color="blue")
+        predict_f = np.poly1d([row[0] for row in np.flip(self.mean.e)])
+
+        # axs[1, 0].plot(x, -y, 'tab:green')
+        axs[1, 0].set_title('After 10 incomes')
+        # axs[1, 1].plot(x, -y, 'tab:red')
+        axs[1, 1].set_title('After 50 incomes')
+
+        # Hide x labels and tick labels for top plots and y ticks for right plots.
+        for ax in axs.flat:
+            ax.label_outer()
+
+        fig.show()
 
 
 if __name__ == '__main__':
