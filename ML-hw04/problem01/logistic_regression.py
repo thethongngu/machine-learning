@@ -200,6 +200,22 @@ def logistic_regression(D1, D2):
     print("Sensitivity (Successfully predict cluster 2): %s" % str(confusion[1][1] / (confusion[1][1] + confusion[1][0])))
 
 
+def newton(D1, D2):
+    X = Matrix(n * 2, 3)
+    for i in range(n):
+        X.set_element(i, 0, D1[i][0])
+        X.set_element(i, 1, D1[i][1])
+        X.set_element(i, 2, 1)
+
+    for i in range(n, n * 2):
+        X.set_element(i, 0, D2[i][0])
+        X.set_element(i, 1, D2[i][1])
+        X.set_element(i, 2, 1)
+
+    D = Matrix(n, n)
+    
+
+
 if __name__ == '__main__':
     print("Machine Learning - HW04")
     print("阮世聰 - 0860832")
@@ -224,3 +240,5 @@ if __name__ == '__main__':
         D2.append([x2_generator.sample(), y2_generator.sample()])
 
     logistic_regression(D1, D2)
+    print("--------------------------------------------------------")
+    newton(D1, D2)
