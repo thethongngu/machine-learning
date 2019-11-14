@@ -169,11 +169,6 @@ def logistic_regression(D1, D2):
         if np.sqrt(change.e[0][0] ** 2 + change.e[1][0] ** 2 + change.e[2][0] ** 2) < 0.01:
             break
 
-        if times % 1 == 0:
-            print(times)
-            print(w)
-            print(change)
-
     confusion = [[0, 0], [0, 0]]
 
     for p in D1:
