@@ -156,13 +156,13 @@ def logistic_regression(D1, D2):
         for p in D1:
             x.set_elements([[p[0], p[1], 1]])
             xw = x.mul_matrix(w).e[0][0]
-            gradient = x.tranpose().mul_scalar(1 - (1.0 / (1.0 + np.exp(-xw))))
+            gradient = x.tranpose().mul_scalar(0 - (1.0 / (1.0 + np.exp(-xw))))
             w = w.add_matrix(gradient)
 
         for p in D2:
             x.set_elements([[p[0], p[1], 1]])
             xw = x.mul_matrix(w).e[0][0]
-            gradient = x.tranpose().mul_scalar(0 - (1.0 / (1.0 + np.exp(-xw))))
+            gradient = x.tranpose().mul_scalar(1 - (1.0 / (1.0 + np.exp(-xw))))
             w = w.add_matrix(gradient)
 
         change = w.sub_matrix(last_w)
