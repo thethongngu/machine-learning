@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Matrix:
@@ -27,6 +28,12 @@ class Matrix:
             for j in range(self.width):
                 ans.e[i][j] = self.e[i][j] * number
         return ans
+
+    def product_diagonal(self):
+        res = self.e[0][0]
+        for i in range(1, self.height):
+            res *= self.e[i][i]
+        return res
 
     def add_matrix(self, mat):
         ans = Matrix(self.height, self.width)
@@ -95,6 +102,10 @@ class Matrix:
 
         return L, U
 
+    def is_invertible(self):
+        L, U = self.LU_decomposition()
+        return L.product_diagonal() * U.product_diagonal() != 0
+
     def inverse(self):
 
         y = Matrix(self.height, self.width)
@@ -145,6 +156,44 @@ class GaussianGenerator:
         return standard_normal_points * self.standard_deviation + self.mean
 
 
+def my_sigmoid(x, w):
+    return 1.0 / (1.0 + np.exp(x.mul_scalar(-1).mul_matrix(w).e[0][0]))
+
+
+def norm2(c):
+    return np.sqrt(c.e[0][0] ** 2 + c.e[1][0] ** 2 + c.e[2][0] ** 2)
+
+
+def show_result(D1, D2, w):
+    confusion = [[0, 0], [0, 0]]
+    x = Matrix(1, 3)
+    for p in D1:
+        x.set_elements([[p[0], p[1], 1]])
+        res = my_sigmoid(x, w)
+        if res >= 0.5:
+            confusion[0][1] += 1
+        else:
+            confusion[0][0] += 1
+    for p in D2:
+        x.set_elements([[p[0], p[1], 1]])
+        res = my_sigmoid(x, w)
+        if res >= 0.5:
+            confusion[1][1] += 1
+        else:
+            confusion[1][0] += 1
+    print("Gradient descent:")
+    print("w:")
+    print(w)
+    print("Confusion matrix: ")
+    print("             | Predict cluster 1  |  Predict cluster 2")
+    print("Is cluster 1 |     %s             |     %s            " % (confusion[0][0], confusion[0][1]))
+    print("Is cluster 2 |     %s             |     %s            " % (confusion[1][0], confusion[1][1]))
+    print(
+        "Sensitivity (Successfully predict cluster 1): %s" % str(confusion[0][0] / (confusion[0][0] + confusion[0][1])))
+    print(
+        "Sensitivity (Successfully predict cluster 2): %s" % str(confusion[1][1] / (confusion[1][1] + confusion[1][0])))
+
+
 def logistic_regression(D1, D2):
     w = Matrix(3, 1)
     x = Matrix(1, 3)
@@ -155,65 +204,119 @@ def logistic_regression(D1, D2):
         last_w = w
         for p in D1:
             x.set_elements([[p[0], p[1], 1]])
-            xw = x.mul_matrix(w).e[0][0]
-            gradient = x.tranpose().mul_scalar(0 - (1.0 / (1.0 + np.exp(-xw))))
+            gradient = x.tranpose().mul_scalar(0 - my_sigmoid(x, w))
             w = w.add_matrix(gradient)
 
         for p in D2:
             x.set_elements([[p[0], p[1], 1]])
-            xw = x.mul_matrix(w).e[0][0]
-            gradient = x.tranpose().mul_scalar(1 - (1.0 / (1.0 + np.exp(-xw))))
+            gradient = x.tranpose().mul_scalar(1 - my_sigmoid(x, w))
             w = w.add_matrix(gradient)
 
         change = w.sub_matrix(last_w)
-        if np.sqrt(change.e[0][0] ** 2 + change.e[1][0] ** 2 + change.e[2][0] ** 2) < 0.01:
+        if norm2(change) < 0.01:
             break
 
-    confusion = [[0, 0], [0, 0]]
-
-    for p in D1:
-        x.set_elements([[p[0], p[1], 1]])
-        xw = x.mul_matrix(w).e[0][0]
-        sigmoid = 1.0 / (1.0 + np.exp(-xw))
-        if sigmoid >= 0.5:
-            confusion[0][1] += 1
-        else:
-            confusion[0][0] += 1
-
-    for p in D2:
-        x.set_elements([[p[0], p[1], 1]])
-        xw = x.mul_matrix(w).e[0][0]
-        sigmoid = 1.0 / (1.0 + np.exp(-xw))
-        if sigmoid >= 0.5:
-            confusion[1][1] += 1
-        else:
-            confusion[1][0] += 1
-
-    print("Gradient descent:")
-    print("w:")
-    print(w)
-    print("Confusion matrix: ")
-    print("             | Predict cluster 1  |  Predict cluster 2")
-    print("Is cluster 1 |     %s             |     %s            " % (confusion[0][0], confusion[0][1]))
-    print("Is cluster 2 |     %s             |     %s            " % (confusion[1][0], confusion[1][1]))
-    print("Sensitivity (Successfully predict cluster 1): %s" % str(confusion[0][0] / (confusion[0][0] + confusion[0][1])))
-    print("Sensitivity (Successfully predict cluster 2): %s" % str(confusion[1][1] / (confusion[1][1] + confusion[1][0])))
+    show_result(D1, D2, w)
+    return w
 
 
 def newton(D1, D2):
-    X = Matrix(n * 2, 3)
+    A = Matrix(n * 2, 3)
+    y = Matrix(n * 2, 1)
     for i in range(n):
-        X.set_element(i, 0, D1[i][0])
-        X.set_element(i, 1, D1[i][1])
-        X.set_element(i, 2, 1)
+        A.set_element(i, 0, D1[i][0])
+        A.set_element(i, 1, D1[i][1])
+        A.set_element(i, 2, 1)
+        y.set_element(i, 0, 0)
 
     for i in range(n, n * 2):
-        X.set_element(i, 0, D2[i][0])
-        X.set_element(i, 1, D2[i][1])
-        X.set_element(i, 2, 1)
+        A.set_element(i, 0, D2[i - n][0])
+        A.set_element(i, 1, D2[i - n][1])
+        A.set_element(i, 2, 1)
+        y.set_element(i, 0, 1)
 
-    D = Matrix(n, n)
-    
+    D = Matrix(n * 2, n * 2)
+    x = Matrix(1, 3)
+    w = Matrix(3, 1)
+
+    diff = Matrix(2 * n, 1)
+    while True:
+        last_w = w
+        for i in range(n * 2):
+            x.set_elements([[A.e[i][0], A.e[i][1], A.e[i][2]]])
+            xw = x.mul_matrix(w).e[0][0]
+            diff.set_element(i, 0, y.e[i][0] - my_sigmoid(x, w))  # (2n, 1)
+            D.set_element(i, i, np.exp(-xw) / ((1.0 + np.exp(-xw)) ** 2))  # (2n, 2n)
+
+        gradient = A.tranpose().mul_matrix(diff)  # (3, 2n) x (2n, 1)
+        H = A.tranpose().mul_matrix(D).mul_matrix(A)  # (3, 2n) x (2n, 2n) x (2n, 3)
+        if H.is_invertible():
+            w = w.add_matrix(H.inverse().mul_matrix(gradient))  # (3, 1)
+        else:
+            w = w.add_matrix(gradient)
+
+        if norm2(w.sub_matrix(last_w)) < 0.01:
+            break
+
+    show_result(D1, D2, w)
+    return w
+
+
+def draw_data(D1, D2, w1, w2):
+    fig, axs = plt.subplots(1, 3)
+
+    # ------------- graph 01 ---------------------
+    graph01 = axs[0]
+    graph01.set_title('Ground truth')
+
+    x = [D1[i][0] for i in range(n)]
+    y = [D1[i][1] for i in range(n)]
+    graph01.scatter(x, y, color='red')
+
+    x = [D2[i][0] for i in range(n)]
+    y = [D2[i][1] for i in range(n)]
+    graph01.scatter(x, y, color='blue')
+
+    x1, x2, y1, y2 = [], [], [], []
+    x = Matrix(1, 3)
+    data = D1
+    data.extend(D2)
+
+    # ------------- graph 02 ---------------------
+    graph01 = axs[1]
+    graph01.set_title('Gradient descent')
+
+    for p in data:
+        x.set_elements([[p[0], p[1], 1]])
+        res = my_sigmoid(x, w1)
+        if res >= 0.5:
+            x1.append(p[0])
+            y1.append(p[1])
+        else:
+            x2.append(p[0])
+            y2.append(p[1])
+
+    graph01.scatter(x1, y1, color='blue')
+    graph01.scatter(x2, y2, color='red')
+
+    # ------------- graph 01 ---------------------
+    graph01 = axs[2]
+    graph01.set_title("Newton's method")
+
+    for p in data:
+        x.set_elements([[p[0], p[1], 1]])
+        res = my_sigmoid(x, w2)
+        if res >= 0.5:
+            x1.append(p[0])
+            y1.append(p[1])
+        else:
+            x2.append(p[0])
+            y2.append(p[1])
+
+    graph01.scatter(x1, y1, color='blue')
+    graph01.scatter(x2, y2, color='red')
+
+    fig.show()
 
 
 if __name__ == '__main__':
@@ -226,6 +329,7 @@ if __name__ == '__main__':
     # mx1, vx1, my1, vy1, mx2, vx2, my2, vy2 = [int(val) for val in input().split(' ')]
     n = 50
     mx1, vx1, my1, vy1, mx2, vx2, my2, vy2 = (1, 2, 1, 2, 10, 2, 10, 2)
+    # mx1, vx1, my1, vy1, mx2, vx2, my2, vy2 = (1, 2, 1, 2, 3, 4, 3, 4)
 
     D1 = []
     x1_generator = GaussianGenerator(mx1, vx1)
@@ -239,6 +343,7 @@ if __name__ == '__main__':
     for i in range(n):
         D2.append([x2_generator.sample(), y2_generator.sample()])
 
-    logistic_regression(D1, D2)
+    w1 = logistic_regression(D1, D2)
     print("--------------------------------------------------------")
-    newton(D1, D2)
+    w2 = newton(D1, D2)
+    draw_data(D1, D2, w1, w2)
