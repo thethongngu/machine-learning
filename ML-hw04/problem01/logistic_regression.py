@@ -323,12 +323,12 @@ if __name__ == '__main__':
     print("Machine Learning - HW04")
     print("阮世聰 - 0860832")
 
-    # print("Input N: ", end='')
-    # n = int(input())
-    # print("Input mx1, vx1, my1, vy1, mx2, vx2, my2, vy2: ", end='')
-    # mx1, vx1, my1, vy1, mx2, vx2, my2, vy2 = [int(val) for val in input().split(' ')]
-    n = 50
-    mx1, vx1, my1, vy1, mx2, vx2, my2, vy2 = (1, 2, 1, 2, 10, 2, 10, 2)
+    print("Input N: ", end='')
+    n = int(input())
+    print("Input mx1, vx1, my1, vy1, mx2, vx2, my2, vy2: ", end='')
+    mx1, vx1, my1, vy1, mx2, vx2, my2, vy2 = [int(val) for val in input().split(' ')]
+    # n = 50
+    # mx1, vx1, my1, vy1, mx2, vx2, my2, vy2 = (1, 2, 1, 2, 10, 2, 10, 2)
     # mx1, vx1, my1, vy1, mx2, vx2, my2, vy2 = (1, 2, 1, 2, 3, 4, 3, 4)
 
     D1 = []
