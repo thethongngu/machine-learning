@@ -8,15 +8,19 @@ const int IMAGE_SIZE = 28 * 28;
 
 double lambda[10];
 double mu[IMAGE_SIZE][10], last_mu[IMAGE_SIZE][10];
-double w[IMAGE_SIZE][10];
+double w[60000][10];
 int num_step = 0;
 double diff;
 
 void init_params() {
     for (double &x : lambda) x = 0.1;
+    for (int pixel_id = 0; pixel_id < IMAGE_SIZE; pixel_id++) {
+        for (int label = 0; label < 10; label++) {
+            mu[pixel_id][label] = 0.0;
+        }
+    }
     for (int image_id = 0; image_id < 60000; image_id++) {
         for (int label = 0; label < 10; label++) {
-            mu[image_id][label] = 0.0;
             w[image_id][label] = 0.1;
         }
     }
@@ -85,7 +89,7 @@ void do_M(const InputData &data) {
 
     // print imagination number
     for (int label = 0; label < 10; label++) {
-        printf("Class %d:", label);
+        printf("\nClass %d:", label);
         for (int pixel_id = 0; pixel_id < IMAGE_SIZE; pixel_id++) {
             if (pixel_id % 28 == 0) printf("\n");
             if (mu[pixel_id][label] >= 0.5) printf("1 "); else printf("0 ");
