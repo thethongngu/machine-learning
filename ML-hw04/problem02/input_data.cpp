@@ -41,7 +41,7 @@ void InputData::ReadImageFile(const std::string& image_file) {
         for(unsigned int i = 0; i < num_image; i++) {
             f.read((char *)&pixel_data, sizeof(pixel_data));
             std::array<unsigned int, 28 * 28> image{};
-            for(unsigned int j = 0; j < image_size; j++) image[j] = (unsigned int)pixel_data[j];
+            for(unsigned int j = 0; j < image_size; j++) image[j] = (unsigned int)pixel_data[j] / 128;
             image_data.push_back(image);
         }
     }
