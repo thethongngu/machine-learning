@@ -86,5 +86,12 @@ gamma = 0.25
 x_train_array = np.array(x_train)
 kernel_train_linear = np.matmul(x_train, np.transpose(x_train))
 kernel_train_RBF = distance.squareform(np.exp(-1 * gamma * distance.pdist(x_train_array, 'sqeuclidean')))
+kernel_x_train = np.hstack((np.arange(1, 5001).reshape((5000, 1)), np.add(kernel_train_linear, kernel_train_RBF)))
 
+x_test_array = np.array(x_test)
+kernel_test_linear = np.matmul(x_test, np.transpose(x_train))  # (2500, 5000)
+kernel_test_RBF = np.exp(-1 * gamma * distance.cdist(x_test_array, x_train_array, 'sqeuclidean'))
+kernel_x_test = np.hstack((np.zeros((2500, 1)), np.add(kernel_test_linear, kernel_test_RBF)))
 
+model = svm_train(y_train, kernel_x_train, "-q -t 4")
+svm_predict(y_test, kernel_x_test, model)
