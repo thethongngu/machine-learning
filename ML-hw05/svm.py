@@ -22,64 +22,64 @@ with open('Y_test.csv') as f:
     y_test_list = [[float(y) for y in x] for x in list(reader)]
     y_test = [y for y_list in y_test_list for y in y_list]
 
-# print("2.1")
-# print("================Linear======================")
-# model = svm_train(y_train, x_train, "-q -t 0")
-# svm_predict(y_test, x_test, model)
-#
-# print(" ================Polynomial===================")
-# model = svm_train(y_train, x_train, "-q -t 1")
-# svm_predict(y_test, x_test, model)
-#
-# print(" ================RBF===================")
-# model = svm_train(y_train, x_train, "-q -t 2")
-# svm_predict(y_test, x_test, model)
+print("2.1")
+print("================Linear======================")
+model = svm_train(y_train, x_train, "-q -t 0")
+svm_predict(y_test, x_test, model)
 
-# print("2.2")
-# C = [0.1, 1, 10, 100]
-# gamma = [0.25, 0.5, 1]
-# coef0 = [0, 1, 10]
-# degree = [1, 2, 4]
-# best_acc = 0.0
-# best_params = []
-#
-# for kernel_id in range(0, 3):
-#     for cost_value in C:
-#         if kernel_id == 0:  # linear
-#             params = "-q -t 0 -v 10 " + "-c " + str(cost_value)
-#             curr_acc = svm_train(y_train, x_train, params)
-#             print(params)
-#             if curr_acc > best_acc:
-#                 best_acc = curr_acc
-#                 best_params = [cost_value]
-#
-#         if kernel_id == 1:  # polynomial
-#             for gamma_value in gamma:
-#                 for coef0_value in coef0:
-#                     for degree_value in degree:
-#                         params = "-q -t 0 -v 10 " + \
-#                                  "-c " + str(cost_value) + \
-#                                  " -g " + str(gamma_value) + \
-#                                  " -d " + str(degree_value) + \
-#                                  " -r " + str(coef0_value)
-#
-#                         curr_acc = svm_train(y_train, x_train, params)
-#                         print(params)
-#                         if curr_acc > best_acc:
-#                             best_acc = curr_acc
-#                             best_params = [cost_value, gamma_value, degree_value, coef0_value]
-#
-#         if kernel_id == 2:  # RBF
-#             for gamma_value in range(0, 3):
-#                 params = "-q -t 0 -v 10 " + " -g " + str(gamma_value)
-#                 curr_acc = svm_train(y_train, x_train, params)
-#                 print(params)
-#                 if curr_acc > best_acc:
-#                     best_acc = curr_acc
-#                     best_params = [cost_value, gamma_value]
-#
-# print("Best: " + str(best_acc))
-# print("Params: " + str(best_params))
+print(" ================Polynomial===================")
+model = svm_train(y_train, x_train, "-q -t 1")
+svm_predict(y_test, x_test, model)
+
+print(" ================RBF===================")
+model = svm_train(y_train, x_train, "-q -t 2")
+svm_predict(y_test, x_test, model)
+
+print("2.2")
+C = [0.1, 1, 10, 100]
+gamma = [0.25, 0.5, 1]
+coef0 = [0, 1, 10]
+degree = [1, 2, 4]
+best_acc = 0.0
+best_params = []
+
+for kernel_id in range(0, 3):
+    for cost_value in C:
+        if kernel_id == 0:  # linear
+            params = "-q -t 0 -v 10 " + "-c " + str(cost_value)
+            curr_acc = svm_train(y_train, x_train, params)
+            print(params)
+            if curr_acc > best_acc:
+                best_acc = curr_acc
+                best_params = [cost_value]
+
+        if kernel_id == 1:  # polynomial
+            for gamma_value in gamma:
+                for coef0_value in coef0:
+                    for degree_value in degree:
+                        params = "-q -t 0 -v 10 " + \
+                                 "-c " + str(cost_value) + \
+                                 " -g " + str(gamma_value) + \
+                                 " -d " + str(degree_value) + \
+                                 " -r " + str(coef0_value)
+
+                        curr_acc = svm_train(y_train, x_train, params)
+                        print(params)
+                        if curr_acc > best_acc:
+                            best_acc = curr_acc
+                            best_params = [cost_value, gamma_value, degree_value, coef0_value]
+
+        if kernel_id == 2:  # RBF
+            for gamma_value in range(0, 3):
+                params = "-q -t 0 -v 10 " + " -g " + str(gamma_value)
+                curr_acc = svm_train(y_train, x_train, params)
+                print(params)
+                if curr_acc > best_acc:
+                    best_acc = curr_acc
+                    best_params = [cost_value, gamma_value]
+
+print("Best: " + str(best_acc))
+print("Params: " + str(best_params))
 
 print("2.3")
 gamma = 0.25
