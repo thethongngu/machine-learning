@@ -105,13 +105,13 @@ print("Params poly: " + str(best_poly_params))
 print("Best RBF: " + str(best_RBF_acc))
 print("Params RBF: " + str(best_RBF_params))
 
-model = svm_train(y_train, x_train, best_linear_params)
+model = svm_train(y_train, x_train, best_linear_params.replace("-v 10", ""))
 svm_predict(y_test, x_test, model)
 
-model = svm_train(y_train, x_train, best_poly_params)
+model = svm_train(y_train, x_train, best_poly_params.replace("-v 10", ""))
 svm_predict(y_test, x_test, model)
 
-model = svm_train(y_train, x_train, best_RBF_params)
+model = svm_train(y_train, x_train, best_RBF_params.replace("-v 10", ""))
 svm_predict(y_test, x_test, model)
 
 
