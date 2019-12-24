@@ -31,20 +31,16 @@ def RBF(x, y, lambda_s, lambda_c):
     return res
 
 
-def visualize(data, label, num_cluster, iteration):
-    colors = ['red', 'blue', 'green']
-    title = "Kernel K-Means Iteration " + str(iteration)
+def visualize(data, res_label, iteration):
+    colors = ['red', 'blue', 'green', 'pink']
+    title = "Iteration " + str(iteration)
 
     plt.xlim([0, WIDTH])
     plt.ylim([0, HEIGHT])
     plt.ylim(max(plt.ylim()), min(plt.ylim()))
 
     for i in range(len(data)):
-        plt.scatter(x=data[i][0], y=data[i][1], color=colors[int(label[i])])
-
-    # for i in range(0, k):
-    #     col = next(color)
-    #     plt.scatter(means[i][0], means[i][1], s=32, c=col)
+        plt.scatter(x=data[i][0], y=data[i][1], color=colors[int(res_label[i])])
 
     plt.title(title)
     plt.show()
@@ -72,16 +68,10 @@ def build_gram_matrix(data):
     return kernel_pair
 
 
-def k_mean(data, num_cluster, kernel_pair=None):
+def k_mean(data, num_cluster, original_data, kernel_pair=None):
     res_label = np.zeros((len(data), 1), dtype=int)
     term2 = np.zeros((len(data), num_cluster))
     term3 = np.zeros((len(data), 1))
-
-    # assign clusters
-    # for i in range(0, len(data) - 1):
-    #     res_label[i] = 1
-    # for i in range(len(data) - 1, len(data)):
-    #     res_label[i] = 0
 
     for i in range(num_cluster):
         length = int(len(data) / num_cluster)
@@ -94,8 +84,7 @@ def k_mean(data, num_cluster, kernel_pair=None):
 
     while True:
 
-        # print(res_label)
-        visualize(data, res_label, num_cluster, count)
+        visualize(original_data, res_label, count)
         count += 1
 
         num_element = np.zeros((len(data), 1))
@@ -130,21 +119,21 @@ def k_mean(data, num_cluster, kernel_pair=None):
         for j in range(len(data)):
             dist = np.zeros((num_cluster, 1))
 
-            print()
-            print(j)
-            print("Pos: (%s, %s)" % (data[j][0], data[j][1]))
+            # print()
+            # print(j)
+            # print("Pos: (%s, %s)" % (data[j][0], data[j][1]))
 
             for cluster_id in range(num_cluster):
                 dist[cluster_id] = kernel_pair[j][j] - term2[j][cluster_id] + term3[cluster_id]
 
-                print("1: %s" % kernel_pair[j][j])
-                print("2: %s" % term2[j][cluster_id])
-                print("3: %s" % term3[cluster_id])
+                # print("1: %s" % kernel_pair[j][j])
+                # print("2: %s" % term2[j][cluster_id])
+                # print("3: %s" % term3[cluster_id])
 
             res_label[j] = np.argmin(dist)
 
-            print(dist)
-            print(res_label[j])
+            # print(dist)
+            # print(res_label[j])
 
         diff = 0
         for j in range(len(data)):
@@ -154,7 +143,7 @@ def k_mean(data, num_cluster, kernel_pair=None):
         if diff < 5:
             break
 
-    visualize(data, res_label, num_cluster, count)
+    visualize(original_data, res_label, count)
 
     return res_label
 
@@ -179,7 +168,7 @@ def spectral(data, num_cluster, is_normalized=False):
         norm_value = np.sum(U, axis=1)
         U = U / norm_value[:, None]
 
-    res_label = k_mean(data=U, num_cluster=k, kernel_pair=W)
+    res_label = k_mean(data=U, num_cluster=k, original_data=data, kernel_pair=W)
     return res_label
 
 
@@ -187,6 +176,7 @@ if __name__ == '__main__':
     print("HW06 - 0860832")
 
     img_data = read_data(file_name="image1.png")
-    # label = k_mean(data=img_data, num_cluster=2)
+    # label = k_mean(data=img_data, num_cluster=2, original_data=img_data)
 
-    label = spectral(data=img_data, num_cluster=2)
+    # label = spectral(data=img_data, num_cluster=2)
+    label = spectral(data=img_data, num_cluster=2, is_normalized=True)
