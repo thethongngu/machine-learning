@@ -7,8 +7,8 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-HEIGHT = 20
-WIDTH = 20
+HEIGHT = 100
+WIDTH = 100
 LAMBDA_S = 0.001
 LAMBDA_C = 0.001
 
@@ -52,6 +52,8 @@ def draw_clusters(data, data_label, iteration, name):
         plt.scatter(x=data[i][0], y=data[i][1], color=colors[data_label[i]])
 
     plt.title(title)
+
+    plt.savefig("image%s/%s" % (active_image, title))
     plt.show()
 
 
@@ -62,142 +64,132 @@ def draw_eigenspace(data, data_label, name):
         plt.scatter(x=data[i][0], y=data[i][1], color=colors[data_label[i]])
 
     plt.title(name)
+    plt.savefig("image%s/%s" % (active_image, name))
     plt.show()
 
 
-def build_gram_matrix(data, gamma_s, gamma_c):
+def build_kernel_distance(data, gamma_s, gamma_c, is_matrix=True):
     coordinates = data[:, :3]
     colors = data[:, 3:]
 
-    spatial_RBF = -gamma_s * squareform(pdist(coordinates, 'sqeuclidean'))
-    color_RBF = -gamma_c * squareform(pdist(colors, 'sqeuclidean'))
-    kernel_pair = np.exp(spatial_RBF) * np.exp(color_RBF)
+    if is_matrix:
+        spatial_RBF = -gamma_s * squareform(pdist(coordinates, 'sqeuclidean'))
+        color_RBF = -gamma_c * squareform(pdist(colors, 'sqeuclidean'))
+        kernel_distance = np.exp(spatial_RBF) * np.exp(color_RBF)
 
-    return kernel_pair
+    else:
+        spatial_RBF = -gamma_s * pdist(coordinates, 'sqeuclidean')
+        color_RBF = -gamma_c * pdist(colors, 'sqeuclidean')
+        kernel_distance = np.exp(spatial_RBF) * np.exp(color_RBF)
+
+    return kernel_distance
 
 
-def init_centers(data, num_cluster, method=""):
-    centers = np.zeros((num_cluster, data.shape[1]))
-
+def init_kmean(data, num_cluster, method=""):
     if method == "random":
+        centers = np.zeros((num_cluster, data.shape[1]))
         ids = np.random.randint(0, len(data), size=num_cluster)
         for i in range(len(ids)):
             centers[i] = data[ids[i]]
 
-    if method == "k-mean++":
+    else:
 
         # create first center randomly
-        centers[0] = data[np.random.randint(0, len(data))]
+        centers_array = [data[np.random.randint(0, len(data))]]
+        centers = np.array(centers_array)
 
         # find remained centers for each cluster_id
         for cluster_id in range(1, num_cluster):
             dist = cdist(data, centers, 'sqeuclidean')
-            centers[cluster_id] = np.argmax(np.min(dist, axis=1), axis=0)
+            centers_array.append(data[np.argmax(np.min(dist, axis=1), axis=0)])
+            centers = np.array(centers_array)
 
     return centers
 
 
-def assign_label_by_mean(data, mean, num_cluster):
-    res_label = np.zeros((len(data), 1), dtype=int)
-    for i in range(len(data)):
-        dist = np.zeros((num_cluster, 1))
-        for cluster_id in range(num_cluster):
-            mean_id = mean[cluster_id]
-            dist[cluster_id] = np.linalg.norm(data[i] - data[mean_id], 2)
-        res_label[i] = np.argmin(dist)
-    return res_label
+def init_kernel_kmean(data, num_cluster, method="", kernel_matrix=None):
+    A = np.zeros((data.shape[0], num_cluster))
+    data_label = np.zeros((len(data),), dtype=int)
+    A[:, 0] = 1
+
+    if method == "random":
+        for i in range(len(data)):
+            cluster_id = np.random.randint(0, num_cluster)
+            A[i, cluster_id] = 1
+            data_label[i] = cluster_id
+
+    if method == "k-mean++":
+        center_ids = np.zeros((1,), dtype=int)
+        center_ids[0] = np.random.randint(0, len(data))
+
+        for i in range(1, num_cluster):
+
+            dist = np.min(kernel_matrix[:, center_ids], axis=1)
+            next_id = np.argmin(dist, axis=0)
+            center_ids = np.append(center_ids, next_id)
+
+            old_label = data_label
+            data_label = np.argmin(kernel_matrix[:, center_ids], axis=1)
+            for j in range(len(data)):
+                A[j, old_label[j]] = 0
+                A[j, data_label[j]] = 1
+
+        print(center_ids)
+
+    return A, data_label
 
 
-def kernel_k_mean(data, num_cluster, original_data, init_mean, kernel_matrix=None):
-    term2 = np.zeros((len(data), num_cluster))
-    term3 = np.zeros((len(data), 1))
-
-    # initialization
-    centers = init_centers(data, num_cluster, init_mean)
-    dist = cdist(data, centers, 'sqeuclidean')
-    data_label = np.argmin(dist, axis=1)
-
+def kernel_kmean(data, num_cluster, original_data, init_mean, kernel_matrix=None):
+    # calculate gram matrix
     if kernel_matrix is None:
-        kernel_matrix = build_gram_matrix(data, 0.001, 0.001)
+        kernel_matrix = build_kernel_distance(data, 0.001, 0.001)
+
+    A, data_label = init_kernel_kmean(data, num_cluster, init_mean, kernel_matrix)
 
     iteration = 0
 
     # k-mean
     while True:
 
-        title = "Kernel K-mean - Iteration: %s - Init: %s" % (iteration, "K-mean++" if init_mean else "")
+        title = "Kernel k-mean - Cluster %s - Initialize %s" % (num_cluster, init_mean)
+        draw_clusters(original_data, data_label, iteration, title)
         iteration += 1
 
         # count number of elements of each cluster
-        num_element = np.zeros((len(data), 1))
-        for i in range(len(res_label)):
-            num_element[res_label[i]] += 1
+        count_point = np.sum(A, axis=0)
+        for i in range(count_point.shape[0]):
+            if count_point[i] == 0:
+                count_point[i] = 1
 
-        # calculate the third term of applied kernel distance
+        second_term = (-2.0 * (kernel_matrix @ A)) / count_point[None, :]
+
+        third_term = np.zeros((num_cluster,))
         for cluster_id in range(num_cluster):
-            res = 0.0
-            for p in range(len(data)):
-                for q in range(len(data)):
-                    if res_label[p] == cluster_id and res_label[q] == cluster_id:
-                        res += kernel_matrix[p][q]
+            point_ids = np.where(A[:, cluster_id] == 1)[0]
+            points = data[point_ids]
+            pair_distance = build_kernel_distance(points, 0.001, 0.001, is_matrix=False)
+            third_term[cluster_id] = np.sum(pair_distance) / (count_point[cluster_id] ** 2)
 
-            if num_element[cluster_id] == 0:
-                term3[cluster_id] = 0
-            else:
-                term3[cluster_id] = (res / (num_element[cluster_id] ** 2))
+        dist = second_term + third_term[None, :]
+        old_label = data_label
+        data_label = np.argmin(dist, axis=1)
 
-        # calculate the second term of applied kernel distance
-        for cluster_id in range(num_cluster):
-            for j in range(len(data)):
-                res = 0.0
-                for n in range(len(data)):
-                    if res_label[n] == cluster_id:
-                        res += kernel_matrix[j][n]
+        for i in range(len(data)):
+            A[i, old_label[i]] = 0
+            A[i, data_label[i]] = 1
 
-                if num_element[cluster_id] == 0:
-                    term2[j][cluster_id] = 0
-                else:
-                    term2[j][cluster_id] = 2.0 * (res / num_element[cluster_id])
-
-        # assign point to nearest mean
-        old_label = np.copy(res_label)
-        for j in range(len(data)):
-            dist = np.zeros((num_cluster, 1))
-
-            # print()
-            # print(j)
-            # print("Pos: (%s, %s)" % (data[j][0], data[j][1]))
-
-            for cluster_id in range(num_cluster):
-                dist[cluster_id] = kernel_matrix[j][j] - term2[j][cluster_id] + term3[cluster_id]
-
-                # print("1: %s" % kernel_pair[j][j])
-                # print("2: %s" % term2[j][cluster_id])
-                # print("3: %s" % term3[cluster_id])
-
-            res_label[j] = np.argmin(dist)
-
-            # print(dist)
-            # print(res_label[j])
-
-        # check difference
-        diff = 0
-        for j in range(len(data)):
-            if res_label[j] != old_label[j]:
-                diff += 1
-
+        diff = np.count_nonzero(old_label != data_label)
         if diff < 5:
             break
 
-    title = "Kernel K-mean - Iteration: %s - Init: %s" % (iteration, "K-mean++" if init_mean else "")
-    draw_clusters(original_data, res_label, iteration, title)
+    draw_clusters(original_data, data_label, iteration, title)
 
-    return res_label
+    return data_label
 
 
-def k_mean(data, num_cluster, original_data, init_center, title=""):
+def kmean(data, num_cluster, original_data, init_center, title=""):
     # initialization
-    centers = init_centers(data, num_cluster, init_center)
+    centers = init_kmean(data, num_cluster, init_center)
     data_label = np.zeros((len(data), 1), dtype=int)
     iteration = 0
 
@@ -212,7 +204,7 @@ def k_mean(data, num_cluster, original_data, init_center, title=""):
         data_label = np.argmin(dist, axis=1)
 
         draw_clusters(original_data, data_label, iteration, title)
-        draw_eigenspace(data, data_label, "aaa")
+        # draw_eigenspace(data, data_label, "aaa")
 
         # calculate new center
         total = np.zeros((num_cluster, data.shape[1]), dtype=float)
@@ -235,9 +227,9 @@ def k_mean(data, num_cluster, original_data, init_center, title=""):
     return data_label
 
 
-def spectral(data, num_cluster, is_normalized=False, init_center="random", W=None):
+def spectral(data, num_cluster, is_normalized, init_center, W=None):
     if W is None:
-        W = build_gram_matrix(data, 0.001, 0.001)
+        W = build_kernel_distance(data, 0.001, 0.001)
 
     if is_normalized:
         D_power = np.diag(np.power(np.sum(W, axis=1), -0.5))
@@ -259,57 +251,62 @@ def spectral(data, num_cluster, is_normalized=False, init_center="random", W=Non
 
         U /= norm_value[:, None]
 
-    title = "%s - Init: %s" % (
+    title = "%s - Cluster %s - Init %s" % (
         "Normalized Cut" if is_normalized else "Ratio Cut",
-        "K-mean++" if init_center else "Random"
+        num_cluster,
+        init_center
     )
 
-    data_label = k_mean(data=U, num_cluster=num_cluster, original_data=data, init_center=init_center, title=title)
+    data_label = kmean(data=U, num_cluster=num_cluster, original_data=data, init_center=init_center, title=title)
 
-    draw_eigenspace(U, data_label, title)
+    draw_eigenspace(U, data_label, "Eigen - " + title)
 
     return data_label
 
+
+active_image = 1
 
 if __name__ == '__main__':
     print("HW06 - 0860832")
 
     # Image 1
     img_data = read_data(file_name="image1.png")
-    gram_matrix = build_gram_matrix(img_data, 0.001, 0.001)
+    gram_matrix = build_kernel_distance(img_data, 0.001, 0.001)
 
-    # kernel_k_mean(data=img_data, num_cluster=2, original_data=img_data, init_mean=False, kernel_pair=gram_matrix)
-    spectral(data=img_data, num_cluster=2, W=gram_matrix)
-    spectral(data=img_data, num_cluster=2, is_normalized=True, W=gram_matrix)
+    kernel_kmean(data=img_data, num_cluster=2, original_data=img_data, init_mean="random", kernel_matrix=gram_matrix)
+    spectral(data=img_data, num_cluster=2, is_normalized=False, init_center="random", W=gram_matrix)
+    spectral(data=img_data, num_cluster=2, is_normalized=True, init_center="random", W=gram_matrix)
 
-    # kernel_k_mean(data=img_data, num_cluster=3, original_data=img_data, init_mean=False, kernel_pair=gram_matrix)
-    # spectral(data=img_data, num_cluster=3, W=gram_matrix)
-    # spectral(data=img_data, num_cluster=3, is_normalized=True, W=gram_matrix)
-    #
-    # kernel_k_mean(data=img_data, num_cluster=4, original_data=img_data, kernel_pair=gram_matrix, init_mean=False)
-    # spectral(data=img_data, num_cluster=4, W=gram_matrix)
-    # spectral(data=img_data, num_cluster=4, is_normalized=True, W=gram_matrix)
-    #
-    # kernel_k_mean(data=img_data, num_cluster=3, original_data=img_data, kernel_pair=gram_matrix, init_mean=True)
-    # spectral(data=img_data, num_cluster=3, init_mean=True, W=gram_matrix)
-    # spectral(data=img_data, num_cluster=3, init_mean=True, is_normalized=True, W=gram_matrix)
+    kernel_kmean(data=img_data, num_cluster=3, original_data=img_data, init_mean="random", kernel_matrix=gram_matrix)
+    spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="random", W=gram_matrix)
+    spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="random", W=gram_matrix)
+
+    kernel_kmean(data=img_data, num_cluster=4, original_data=img_data, init_mean="random", kernel_matrix=gram_matrix)
+    spectral(data=img_data, num_cluster=4, is_normalized=False, init_center="random", W=gram_matrix)
+    spectral(data=img_data, num_cluster=4, is_normalized=True, init_center="random", W=gram_matrix)
+
+    kernel_kmean(data=img_data, num_cluster=3, original_data=img_data, init_mean="k-mean++", kernel_matrix=gram_matrix)
+    spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="k-mean++", W=gram_matrix)
+    spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="k-mean++", W=gram_matrix)
+
+    active_image = 2
 
     # Image 2
-    # img_data = read_data(file_name="image2.png")
-    # gram_matrix = build_gram_matrix(img_data, 0.001, 0.001)
+    img_data = read_data(file_name="image2.png")
+    gram_matrix = build_kernel_distance(img_data, 0.001, 0.001)
 
-    # kernel_k_mean(data=img_data, num_cluster=2, original_data=img_data, init_mean=False, kernel_pair=gram_matrix)
-    # spectral(data=img_data, num_cluster=2, kernel_pair=gram_matrix)
-    # spectral(data=img_data, num_cluster=2, is_normalized=True, W=gram_matrix)
-    #
-    # kernel_k_mean(data=img_data, num_cluster=3, original_data=img_data, init_mean=False, kernel_pair=gram_matrix)
-    # spectral(data=img_data, num_cluster=3, kernel_pair=gram_matrix)
-    # spectral(data=img_data, num_cluster=3, is_normalized=True, kernel_pair=gram_matrix)
-    #
-    # kernel_k_mean(data=img_data, num_cluster=4, original_data=img_data, kernel_pair=gram_matrix, init_mean=False)
-    # spectral(data=img_data, num_cluster=4, kernel_pair=gram_matrix)
-    # spectral(data=img_data, num_cluster=4, is_normalized=True, kernel_pair=gram_matrix)
-    #
-    # kernel_k_mean(data=img_data, num_cluster=3, original_data=img_data, kernel_pair=gram_matrix, init_mean=True)
-    # spectral(data=img_data, num_cluster=3, kernel_pair=gram_matrix)
-    # spectral(data=img_data, num_cluster=3, is_normalized=True, kernel_pair=gram_matrix)
+    kernel_kmean(data=img_data, num_cluster=2, original_data=img_data, init_mean="random", kernel_matrix=gram_matrix)
+    spectral(data=img_data, num_cluster=2, is_normalized=False, init_center="random", W=gram_matrix)
+    spectral(data=img_data, num_cluster=2, is_normalized=True, init_center="random", W=gram_matrix)
+
+    kernel_kmean(data=img_data, num_cluster=3, original_data=img_data, init_mean="random", kernel_matrix=gram_matrix)
+    spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="random", W=gram_matrix)
+    spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="random", W=gram_matrix)
+
+    kernel_kmean(data=img_data, num_cluster=4, original_data=img_data, init_mean="random", kernel_matrix=gram_matrix)
+    spectral(data=img_data, num_cluster=4, is_normalized=False, init_center="random", W=gram_matrix)
+    spectral(data=img_data, num_cluster=4, is_normalized=True, init_center="random", W=gram_matrix)
+
+    kernel_kmean(data=img_data, num_cluster=3, original_data=img_data, init_mean="k-mean++", kernel_matrix=gram_matrix)
+    spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="k-mean++", W=gram_matrix)
+    spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="k-mean++", W=gram_matrix)
