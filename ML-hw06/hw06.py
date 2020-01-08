@@ -7,15 +7,16 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-HEIGHT = 100
-WIDTH = 100
+HEIGHT =  960 // 5
+WIDTH = 500 // 5
 LAMBDA_S = 0.001
 LAMBDA_C = 0.001
 
 
 def read_data(file_name):
-    image = Image.open(file_name)
+    image = Image.open(file_name).crop((0, 0, 500, 960))
     image.thumbnail((WIDTH, HEIGHT), Image.ANTIALIAS)
+    image.show()
 
     pixels = image.load()
 
@@ -268,43 +269,47 @@ if __name__ == '__main__':
     print("HW06 - 0860832")
 
     # Image 1
-    img_data = read_data(file_name="image1.png")
-    gram_matrix = build_kernel_distance(img_data, 0.001, 0.001)
+    # img_data = read_data(file_name="image1.png")
+    # gram_matrix = build_kernel_distance(img_data, 0.001, 0.001)
 
     # kernel_kmean(data=img_data, num_cluster=2, init_mean="random", kernel_matrix=gram_matrix)
     # spectral(data=img_data, num_cluster=2, is_normalized=False, init_center="random", W=gram_matrix)
-    spectral(data=img_data, num_cluster=2, is_normalized=True, init_center="random", W=gram_matrix)
+    # spectral(data=img_data, num_cluster=2, is_normalized=True, init_center="random", W=gram_matrix)
+    #
+    # kernel_kmean(data=img_data, num_cluster=3, init_mean="random", kernel_matrix=gram_matrix)
+    # spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="random", W=gram_matrix)
+    # spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="random", W=gram_matrix)
+    #
+    # kernel_kmean(data=img_data, num_cluster=4, init_mean="random", kernel_matrix=gram_matrix)
+    # spectral(data=img_data, num_cluster=4, is_normalized=False, init_center="random", W=gram_matrix)
+    # spectral(data=img_data, num_cluster=4, is_normalized=True, init_center="random", W=gram_matrix)
+    #
+    # kernel_kmean(data=img_data, num_cluster=3, init_mean="k-mean++", kernel_matrix=gram_matrix)
+    # spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="k-mean++", W=gram_matrix)
+    # spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="k-mean++", W=gram_matrix)
+    #
+    # active_image = 2
+    #
+    # # Image 2
+    # img_data = read_data(file_name="image2.png")
+    # gram_matrix = build_kernel_distance(img_data, 0.001, 0.001)
+    #
+    # kernel_kmean(data=img_data, num_cluster=2, init_mean="random", kernel_matrix=gram_matrix)
+    # spectral(data=img_data, num_cluster=2, is_normalized=False, init_center="random", W=gram_matrix)
+    # spectral(data=img_data, num_cluster=2, is_normalized=True, init_center="random", W=gram_matrix)
+    #
+    # kernel_kmean(data=img_data, num_cluster=3, init_mean="random", kernel_matrix=gram_matrix)
+    # spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="random", W=gram_matrix)
+    # spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="random", W=gram_matrix)
+    #
+    # kernel_kmean(data=img_data, num_cluster=4, init_mean="random", kernel_matrix=gram_matrix)
+    # spectral(data=img_data, num_cluster=4, is_normalized=False, init_center="random", W=gram_matrix)
+    # spectral(data=img_data, num_cluster=4, is_normalized=True, init_center="random", W=gram_matrix)
+    #
+    # kernel_kmean(data=img_data, num_cluster=3, init_mean="k-mean++", kernel_matrix=gram_matrix)
+    # spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="k-mean++", W=gram_matrix)
+    # spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="k-mean++", W=gram_matrix)
 
-    kernel_kmean(data=img_data, num_cluster=3, init_mean="random", kernel_matrix=gram_matrix)
-    spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="random", W=gram_matrix)
-    spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="random", W=gram_matrix)
-
-    kernel_kmean(data=img_data, num_cluster=4, init_mean="random", kernel_matrix=gram_matrix)
-    spectral(data=img_data, num_cluster=4, is_normalized=False, init_center="random", W=gram_matrix)
-    spectral(data=img_data, num_cluster=4, is_normalized=True, init_center="random", W=gram_matrix)
-
-    kernel_kmean(data=img_data, num_cluster=3, init_mean="k-mean++", kernel_matrix=gram_matrix)
-    spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="k-mean++", W=gram_matrix)
-    spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="k-mean++", W=gram_matrix)
-
-    active_image = 2
-
-    # Image 2
-    img_data = read_data(file_name="image2.png")
+    img_data = read_data(file_name="fish.jpg")
     gram_matrix = build_kernel_distance(img_data, 0.001, 0.001)
-
-    kernel_kmean(data=img_data, num_cluster=2, init_mean="random", kernel_matrix=gram_matrix)
-    spectral(data=img_data, num_cluster=2, is_normalized=False, init_center="random", W=gram_matrix)
-    spectral(data=img_data, num_cluster=2, is_normalized=True, init_center="random", W=gram_matrix)
-
     kernel_kmean(data=img_data, num_cluster=3, init_mean="random", kernel_matrix=gram_matrix)
-    spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="random", W=gram_matrix)
-    spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="random", W=gram_matrix)
-
-    kernel_kmean(data=img_data, num_cluster=4, init_mean="random", kernel_matrix=gram_matrix)
-    spectral(data=img_data, num_cluster=4, is_normalized=False, init_center="random", W=gram_matrix)
-    spectral(data=img_data, num_cluster=4, is_normalized=True, init_center="random", W=gram_matrix)
-
-    kernel_kmean(data=img_data, num_cluster=3, init_mean="k-mean++", kernel_matrix=gram_matrix)
-    spectral(data=img_data, num_cluster=3, is_normalized=False, init_center="k-mean++", W=gram_matrix)
-    spectral(data=img_data, num_cluster=3, is_normalized=True, init_center="k-mean++", W=gram_matrix)
