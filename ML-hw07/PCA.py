@@ -88,7 +88,6 @@ def PCA(training, testing, train_label, test_label):
     fig = plt.figure(figsize=(50, 20))
     random_ids = random.sample(range(num_train), 10)
     random_imgs = training[:, random_ids]  # (f, 10)
-    print(random_ids)
     reconstructed_img = random_imgs.T @ W.T @ W  # (10, f) * (f, 25) * (25, f) = (10, f)
 
     for i in range(10):
@@ -105,8 +104,6 @@ def PCA(training, testing, train_label, test_label):
     lowd_train = W @ training  # (25 x 135)
     lowd_test = W @ testing    # (25 x 10)
     dist = cdist(lowd_test.T, lowd_train.T, 'euclidean')  # (10 x 135)
-
-    # print(test_label)
 
     k = 15
     smallest_ids = train_label[np.argsort(dist, axis=1)[:, :k]]

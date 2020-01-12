@@ -59,26 +59,32 @@ def show_image(data):
 def LDA(training, testing, train_label, test_label):
     mean_all = (np.sum(training, axis=1) / num_train).reshape((num_pixel, 1))  # (f, 1)
     mean_class = np.zeros((num_subject, num_pixel))  # (15, f)
-    num_train_per_class = 9
+    count_item = np.zeros((num_subject, 1))
+
+    for image_id in range(num_train):
+        class_id = train_label[image_id]
+        mean_class[class_id] += training[:, image_id].T  # (15, f) + (1, f)
+        count_item[class_id] += 1
 
     for class_id in range(num_subject):
-        start_id = class_id * num_train_per_class
-        end_id = start_id + num_train_per_class - 1
-        mean_class[class_id] = np.sum(training[:, start_id: end_id], axis=1) / num_train_per_class  # (15, f)
-        show_image(mean_class[class_id])
+        count_item[class_id] = max(1, count_item[class_id])
+
+    mean_class = np.true_divide(mean_class, count_item)
 
     SW = np.zeros((num_pixel, num_pixel))
-    SB = np.zeros((num_pixel, num_pixel))
-    for class_id in range(num_subject):
-        start_id = class_id * num_train_per_class
-        end_id = start_id + num_train_per_class - 1
-        sw_diff = training[:, start_id: end_id] - mean_class[class_id].reshape(num_pixel, 1)  # (f, 9) - (f, 1) = (f, 9)
+    for image_id in range(num_train):
+        class_id = train_label[image_id]
+        sw_diff = training[:, image_id] - mean_class[class_id].reshape(num_pixel, 1)  # (f, 9) - (f, 1) = (f, 9)
         SW += sw_diff @ sw_diff.T  # (f, f)
 
+    SB = np.zeros((num_pixel, num_pixel))
+    for class_id in range(num_subject):
         sb_diff = mean_class[class_id].T - mean_all  # (f, 1) - (f, 1) = (f, 1)
-        SB += sb_diff @ sb_diff.T
+        SB += sb_diff @ sb_diff.T * count_item[class_id]
 
     low_dim = 25
+    print(SW.shape)
+    SW = SW * 100.0
     eigen_value, eigen_vector = np.linalg.eigh(np.linalg.inv(SW) @ SB)
     sorted_id = np.argsort(eigen_value)
     eigen_vector = eigen_vector[sorted_id][::-1]
@@ -95,6 +101,36 @@ def LDA(training, testing, train_label, test_label):
                         labelright='off', labelbottom='off')
 
     plt.show()
+
+    # ------------ reconstruct 10 random images --------------------
+    fig = plt.figure(figsize=(50, 20))
+    random_ids = random.sample(range(num_train), 10)
+    random_imgs = training[:, random_ids]  # (f, 10)
+    reconstructed_img = random_imgs.T @ W.T @ W  # (10, f) * (f, 25) * (25, f) = (10, f)
+
+    for i in range(10):
+        show_image(reconstructed_img[i])
+        fig.add_subplot(2, 5, i + 1)
+        plt.imshow(reconstructed_img[i].reshape(height, width), cmap='gray')
+        plt.axis('off')
+        plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
+                        labelright='off', labelbottom='off')
+
+    plt.show()
+
+    # ------------ face recognition --------------------
+    lowd_train = W @ training  # (25 x 135)
+    lowd_test = W @ testing  # (25 x 10)
+    dist = cdist(lowd_test.T, lowd_train.T, 'euclidean')  # (10 x 135)
+
+    k = 15
+    smallest_ids = train_label[np.argsort(dist, axis=1)[:, :k]]
+    prediction = np.zeros((num_test,), dtype=int)
+    for i in range(num_test):
+        prediction[i] = np.argmax(np.bincount(smallest_ids[i]))
+
+    error_rate = np.count_nonzero(prediction != test_label) / num_test
+    print("Error rate: ", str(error_rate))
 
 
 if __name__ == '__main__':
