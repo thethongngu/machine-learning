@@ -96,8 +96,8 @@ def PCA(training, testing, train_label, test_label):
 
     # ------------ face recognition --------------------
     lowd_train = W @ training  # (25 x 135)
-    lowd_test = W @ testing  # (25 x 10)
-    dist = cdist(lowd_test.T, lowd_train.T, 'euclidean')  # (10 x 135)
+    lowd_test = W @ testing  # (25 x 30)
+    dist = cdist(lowd_test.T, lowd_train.T, 'euclidean')  # (30 x 135)
 
     k = 15
     smallest_ids = train_label[np.argsort(dist, axis=1)[:, :k]]
