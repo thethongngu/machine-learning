@@ -19,7 +19,6 @@ np.set_printoptions(threshold=np.inf)
 
 
 def read_data(path):
-
     count_train = 0
     count_test = 0
     training = np.zeros((num_pixel, num_train))
@@ -35,8 +34,8 @@ def read_data(path):
         train_label[count_train] = int(file[pos: pos + 2])
         count_train += 1
 
-    train_path = path + '/Testing/*'
-    for file in glob.glob(train_path):
+    test_path = path + '/Testing/*'
+    for file in glob.glob(test_path):
         img = Image.open(file)
         testing[:, count_test] = np.array(img).reshape(-1, )
         pos = file.find('subject') + 7
@@ -47,14 +46,10 @@ def read_data(path):
 
 
 def show_image(data):
+    emin = np.min(data)
+    emax = np.max(data)
+    data = (data - emin) * 255 / (emax - emin)
     Image.fromarray(data.reshape(width, height)).show()
-
-
-def scale_to_image(W):
-    emin = np.min(W, axis=1).reshape(-1, 1)
-    emax = np.max(W, axis=1).reshape(-1, 1)
-    W = (W - emin) * 255 / (emax - emin)
-    return W
 
 
 def PCA(training, testing, train_label, test_label):
@@ -77,7 +72,7 @@ def PCA(training, testing, train_label, test_label):
 
     for i in range(low_dim):
         fig.add_subplot(5, 5, i + 1)
-        plt.imshow(W[i].reshape(height, width), cmap='gray')
+        plt.imshow(W[i].reshape(width, height), cmap='gray')
         plt.axis('off')
         plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
                         labelright='off', labelbottom='off')
@@ -91,9 +86,8 @@ def PCA(training, testing, train_label, test_label):
     reconstructed_img = random_imgs.T @ W.T @ W  # (10, f) * (f, 25) * (25, f) = (10, f)
 
     for i in range(10):
-        show_image(reconstructed_img[i])
         fig.add_subplot(2, 5, i + 1)
-        plt.imshow(reconstructed_img[i].reshape(height, width), cmap='gray')
+        plt.imshow(reconstructed_img[i].reshape(width, height), cmap='gray')
         plt.axis('off')
         plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
                         labelright='off', labelbottom='off')
@@ -102,12 +96,12 @@ def PCA(training, testing, train_label, test_label):
 
     # ------------ face recognition --------------------
     lowd_train = W @ training  # (25 x 135)
-    lowd_test = W @ testing    # (25 x 10)
+    lowd_test = W @ testing  # (25 x 10)
     dist = cdist(lowd_test.T, lowd_train.T, 'euclidean')  # (10 x 135)
 
     k = 15
     smallest_ids = train_label[np.argsort(dist, axis=1)[:, :k]]
-    prediction = np.zeros((num_test, ), dtype=int)
+    prediction = np.zeros((num_test,), dtype=int)
     for i in range(num_test):
         prediction[i] = np.argmax(np.bincount(smallest_ids[i]))
 
@@ -116,5 +110,8 @@ def PCA(training, testing, train_label, test_label):
 
 
 if __name__ == '__main__':
-    train, test, train_label, test_label = read_data('/home/thethongngu/Documents/code/machine-learning/ML-hw07/Yale_Face_Database/')
+    # train, test, train_label, test_label = read_data('/home/thethongngu/Documents/code/machine-learning/ML-hw07/Yale_Face_Database/')
+    train, test, train_label, test_label = read_data(
+        '/Users/thethongngu/Documents/machine-learning/ML-hw07/Yale_Face_Database/'
+    )
     PCA(train, test, train_label, test_label)

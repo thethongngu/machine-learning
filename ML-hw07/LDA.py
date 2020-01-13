@@ -11,8 +11,8 @@ num_property = 11
 num_train = 135
 num_test = 30
 
-height = 50
-width = 50
+height = 195
+width = 231
 num_pixel = height * width
 
 np.set_printoptions(threshold=np.inf)
@@ -29,21 +29,17 @@ def read_data(path):
     train_path = path + '/Training/*'
     for file in glob.glob(train_path):
         img = Image.open(file)
-        img = img.resize((height, width))
-
         training[:, count_train] = np.array(img).reshape(-1, )
         pos = file.find('subject') + 7
-        train_label[count_train] = int(file[pos: pos + 2])
+        train_label[count_train] = int(file[pos: pos + 2]) - 1
         count_train += 1
 
-    train_path = path + '/Testing/*'
-    for file in glob.glob(train_path):
+    test_path = path + '/Testing/*'
+    for file in glob.glob(test_path):
         img = Image.open(file)
-        img = img.resize((height, width))
-
         testing[:, count_test] = np.array(img).reshape(-1, )
         pos = file.find('subject') + 7
-        test_label[count_test] = int(file[pos: pos + 2])
+        test_label[count_test] = int(file[pos: pos + 2]) - 1
         count_test += 1
 
     return training, testing, train_label, test_label
@@ -56,14 +52,35 @@ def show_image(data):
     Image.fromarray(data.reshape(width, height)).show()
 
 
+def PCA(training, low_dim):
+    mean = (np.sum(training, axis=1) / num_train).reshape((num_pixel, 1))  # (f, 1)
+    mean0_data = training - mean  # (f, 135)
+
+    K = (mean0_data.T @ mean0_data) / num_train  # 135 x 135
+
+    eigen_value, eigen_vector = np.linalg.eigh(K)  # (135, ), (135, 135)
+    eigen_vector = (mean0_data @ eigen_vector).T  # ((f x 135) @ (135, 135)).T = (135 x f)
+
+    sorted_id = np.argsort(eigen_value)
+    eigen_vector = eigen_vector[sorted_id][::-1]
+    eigen_vector = np.true_divide(eigen_vector, np.linalg.norm(eigen_vector, ord=2, axis=1).reshape(-1, 1))
+    W = eigen_vector[:low_dim]  # (low_diw x f)
+
+    return W @ training, W
+
+
 def LDA(training, testing, train_label, test_label):
-    mean_all = (np.sum(training, axis=1) / num_train).reshape((num_pixel, 1))  # (f, 1)
-    mean_class = np.zeros((num_subject, num_pixel))  # (15, f)
+
+    low_dim = num_train - num_subject
+    lowd_data, eigens_pca = PCA(training, low_dim)  # (120, 135), (low_dim, f)
+
+    mean_all = (np.sum(lowd_data, axis=1) / num_train).reshape((low_dim, 1))  # (f, 1)
+    mean_class = np.zeros((num_subject, low_dim))  # (15, f)
     count_item = np.zeros((num_subject, 1))
 
     for image_id in range(num_train):
         class_id = train_label[image_id]
-        mean_class[class_id] += training[:, image_id].T  # (15, f) + (1, f)
+        mean_class[class_id] += lowd_data[:, image_id].T  # (15, f) + (1, f)
         count_item[class_id] += 1
 
     for class_id in range(num_subject):
@@ -71,31 +88,30 @@ def LDA(training, testing, train_label, test_label):
 
     mean_class = np.true_divide(mean_class, count_item)
 
-    SW = np.zeros((num_pixel, num_pixel))
+    SW = np.zeros((low_dim, low_dim))
     for image_id in range(num_train):
         class_id = train_label[image_id]
-        sw_diff = training[:, image_id] - mean_class[class_id].reshape(num_pixel, 1)  # (f, 9) - (f, 1) = (f, 9)
+        sw_diff = lowd_data[:, image_id] - mean_class[class_id].reshape(low_dim, 1)  # (f, 9) - (f, 1) = (f, 9)
         SW += sw_diff @ sw_diff.T  # (f, f)
 
-    SB = np.zeros((num_pixel, num_pixel))
+    SB = np.zeros((low_dim, low_dim))
     for class_id in range(num_subject):
         sb_diff = mean_class[class_id].T - mean_all  # (f, 1) - (f, 1) = (f, 1)
         SB += sb_diff @ sb_diff.T * count_item[class_id]
 
-    low_dim = 25
-    print(SW.shape)
-    SW = SW * 100.0
     eigen_value, eigen_vector = np.linalg.eigh(np.linalg.inv(SW) @ SB)
     sorted_id = np.argsort(eigen_value)
     eigen_vector = eigen_vector[sorted_id][::-1]
-    W = eigen_vector[:low_dim]  # (low_dim, f)
+    W = eigen_vector[:25]  # (25, 120)
+
+    W = W @ eigens_pca  # (25, 120) x (120, f) = (25, f)
 
     # ------------ show first 25 fisherfaces --------------------
     fig = plt.figure(figsize=(50, 50))
 
-    for i in range(low_dim):
+    for i in range(25):
         fig.add_subplot(5, 5, i + 1)
-        plt.imshow(W[i].reshape(height, width), cmap='gray')
+        plt.imshow(W[i].reshape(width, height), cmap='gray')
         plt.axis('off')
         plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
                         labelright='off', labelbottom='off')
@@ -109,9 +125,8 @@ def LDA(training, testing, train_label, test_label):
     reconstructed_img = random_imgs.T @ W.T @ W  # (10, f) * (f, 25) * (25, f) = (10, f)
 
     for i in range(10):
-        show_image(reconstructed_img[i])
         fig.add_subplot(2, 5, i + 1)
-        plt.imshow(reconstructed_img[i].reshape(height, width), cmap='gray')
+        plt.imshow(reconstructed_img[i].reshape(width, height), cmap='gray')
         plt.axis('off')
         plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
                         labelright='off', labelbottom='off')
@@ -119,9 +134,9 @@ def LDA(training, testing, train_label, test_label):
     plt.show()
 
     # ------------ face recognition --------------------
-    lowd_train = W @ training  # (25 x 135)
-    lowd_test = W @ testing  # (25 x 10)
-    dist = cdist(lowd_test.T, lowd_train.T, 'euclidean')  # (10 x 135)
+    lowd_train = W @ training
+    lowd_test = W @ testing
+    dist = cdist(lowd_test.T, lowd_train.T, 'euclidean')
 
     k = 15
     smallest_ids = train_label[np.argsort(dist, axis=1)[:, :k]]
@@ -135,6 +150,6 @@ def LDA(training, testing, train_label, test_label):
 
 if __name__ == '__main__':
     train, test, train_label, test_label = read_data(
-        '/home/thethongngu/Documents/code/machine-learning/ML-hw07/Yale_Face_Database/'
+        '/Users/thethongngu/Documents/machine-learning/ML-hw07/Yale_Face_Database/'
     )
     LDA(train, test, train_label, test_label)
