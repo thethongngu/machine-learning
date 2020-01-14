@@ -57,7 +57,6 @@ def PCA(training, testing, train_label, test_label):
     mean0_data = training - mean  # 2500 x 135
 
     K = (mean0_data.T @ mean0_data) / num_train  # 135 x 135
-
     eigen_value, eigen_vector = np.linalg.eigh(K)  # (135, ), (135, 135)
     eigen_vector = (mean0_data @ eigen_vector).T  # ((f x 135) @ (135, 135)).T = (135 x f)
 
@@ -110,8 +109,5 @@ def PCA(training, testing, train_label, test_label):
 
 
 if __name__ == '__main__':
-    # train, test, train_label, test_label = read_data('/home/thethongngu/Documents/code/machine-learning/ML-hw07/Yale_Face_Database/')
-    train, test, train_label, test_label = read_data(
-        '/Users/thethongngu/Documents/machine-learning/ML-hw07/Yale_Face_Database/'
-    )
+    train, test, train_label, test_label = read_data('/home/thethongngu/Documents/code/machine-learning/ML-hw07/Yale_Face_Database/')
     PCA(train, test, train_label, test_label)

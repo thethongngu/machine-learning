@@ -149,7 +149,5 @@ def LDA(training, testing, train_label, test_label):
 
 
 if __name__ == '__main__':
-    train, test, train_label, test_label = read_data(
-        '/Users/thethongngu/Documents/machine-learning/ML-hw07/Yale_Face_Database/'
-    )
+    train, test, train_label, test_label = read_data('/home/thethongngu/Documents/code/machine-learning/ML-hw07/Yale_Face_Database/')
     LDA(train, test, train_label, test_label)
