@@ -4,6 +4,7 @@ from scipy.spatial.distance import cdist
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
+import os
 import random
 
 num_subject = 15
@@ -109,5 +110,5 @@ def PCA(training, testing, train_label, test_label):
 
 
 if __name__ == '__main__':
-    train, test, train_label, test_label = read_data('/home/thethongngu/Documents/code/machine-learning/ML-hw07/Yale_Face_Database/')
+    train, test, train_label, test_label = read_data(os.getcwd() + '/Yale_Face_Database/')
     PCA(train, test, train_label, test_label)

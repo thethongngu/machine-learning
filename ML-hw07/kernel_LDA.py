@@ -1,5 +1,5 @@
 from PIL import Image
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import pdist, squareform, cdist
 
 import numpy as np
 import glob
@@ -53,27 +53,32 @@ def show_image(data):
     Image.fromarray(data.reshape(width, height)).show()
 
 
-def PCA(training, low_dim):
-    mean = (np.sum(training, axis=1) / num_train).reshape((num_pixel, 1))  # (f, 1)
-    mean0_data = training - mean  # (f, 135)
+def kernel_PCA(training, low_dim, kernel_type):
+    if kernel_type == 'RBF':
+        gamma = 1e-3
+        K_train = np.exp(-gamma * squareform(pdist(training.T, 'sqeuclidean')))  # (135, 135)
+    if kernel_type == 'linear':
+        K_train = training.T @ training
 
-    K = (mean0_data.T @ mean0_data) / num_train  # 135 x 135
-
-    eigen_value, eigen_vector = np.linalg.eigh(K)  # (135, ), (135, 135)
-    eigen_vector = (mean0_data @ eigen_vector).T  # ((f x 135) @ (135, 135)).T = (135 x f)
+    one = np.ones((num_train, num_train)) / num_train
+    K_center = K_train - one @ K_train - K_train @ one + one @ K_train @ one
+    eigen_value, eigen_vector = np.linalg.eigh(K_center)
 
     sorted_id = np.argsort(eigen_value)
-    eigen_vector = eigen_vector[sorted_id][::-1]
+    eigen_vector = eigen_vector[sorted_id].T[::-1][: low_dim]
+    eigen_value = eigen_value.T[::-1][: low_dim]
     eigen_vector = np.true_divide(eigen_vector, np.linalg.norm(eigen_vector, ord=2, axis=1).reshape(-1, 1))
-    W = eigen_vector[:low_dim]  # (low_diw x f)
+    W = eigen_vector[:low_dim]
 
-    return W @ training, W
+    lowd_train = W @ K_train
+    return lowd_train, W
 
 
-def LDA(training, testing, train_label, test_label):
-
+def kernel_LDA(training, testing, train_label, test_label, kernel_type):
     low_dim = num_train - num_subject
-    lowd_data, eigens_pca = PCA(training, low_dim)  # (120, 135), (low_dim, f)
+    lowd_data, eigens_pca = kernel_PCA(training, low_dim, kernel_type)  # (120, 135), (low_dim, f)
+    print(lowd_data.shape)
+    print(eigens_pca.shape)
 
     mean_all = (np.sum(lowd_data, axis=1) / num_train).reshape((low_dim, 1))  # (f, 1)
     mean_class = np.zeros((num_subject, low_dim))  # (15, f)
@@ -107,32 +112,8 @@ def LDA(training, testing, train_label, test_label):
 
     W = W @ eigens_pca  # (25, 120) x (120, f) = (25, f)
 
-    # ------------ show first 25 fisherfaces --------------------
-    fig = plt.figure(figsize=(50, 50))
-
-    for i in range(25):
-        fig.add_subplot(5, 5, i + 1)
-        plt.imshow(W[i].reshape(width, height), cmap='gray')
-        plt.axis('off')
-        plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
-                        labelright='off', labelbottom='off')
-
-    plt.show()
-
-    # ------------ reconstruct 10 random images --------------------
-    fig = plt.figure(figsize=(50, 20))
-    random_ids = random.sample(range(num_train), 10)
-    random_imgs = training[:, random_ids]  # (f, 10)
-    reconstructed_img = random_imgs.T @ W.T @ W  # (10, f) * (f, 25) * (25, f) = (10, f)
-
-    for i in range(10):
-        fig.add_subplot(2, 5, i + 1)
-        plt.imshow(reconstructed_img[i].reshape(width, height), cmap='gray')
-        plt.axis('off')
-        plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
-                        labelright='off', labelbottom='off')
-
-    plt.show()
+    print(W.shape)
+    print(eigens_pca.shape)
 
     # ------------ face recognition --------------------
     lowd_train = W @ training
@@ -151,4 +132,4 @@ def LDA(training, testing, train_label, test_label):
 
 if __name__ == '__main__':
     train, test, train_label, test_label = read_data(os.getcwd() + '/Yale_Face_Database/')
-    LDA(train, test, train_label, test_label)
+    kernel_LDA(train, test, train_label, test_label, 'linear')

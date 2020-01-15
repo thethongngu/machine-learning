@@ -3,6 +3,7 @@ from scipy.spatial.distance import pdist, squareform, cdist
 
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 import glob
 import random
 
@@ -53,31 +54,31 @@ def show_image(data):
 
 
 def kernel_PCA(training, testing, train_label, test_label, kernel_type):
+
     if kernel_type == 'RBF':
-        gamma = 0.01
-        K = np.exp(-gamma * squareform(pdist(training.T, 'sqeuclidean')))  # (135, 135)
+        gamma = 1e-3
+        K_train = np.exp(-gamma * squareform(pdist(training.T, 'sqeuclidean')))  # (135, 135)
+        K_test = np.exp(-gamma * cdist(training.T, testing.T, 'sqeuclidean'))  # (135, 135)
     if kernel_type == 'linear':
-        K = training.T @ training
+        K_train = training.T @ training
+        K_test = training.T @ testing
 
     one = np.ones((num_train, num_train)) / num_train
-    K_center = K - one @ K - K @ one + one @ K @ one
+    K_center = K_train - one @ K_train - K_train @ one + one @ K_train @ one
     eigen_value, eigen_vector = np.linalg.eigh(K_center)
+
+    low_dim = 25
     sorted_id = np.argsort(eigen_value)
-    eigen_vector = eigen_vector[sorted_id][::-1]
+    eigen_vector = eigen_vector[sorted_id].T[::-1][: low_dim]
+    eigen_value = eigen_value.T[::-1][: low_dim]
+    eigen_vector = np.true_divide(eigen_vector, np.linalg.norm(eigen_vector, ord=2, axis=1).reshape(-1, 1))
+    W = eigen_vector[:low_dim]
 
-    lowd_train = np.zeros((num_train, num_train))
-    for i in range(num_train):
-        lowd_train[i] = np.sum(eigen_vector.T * K[:, i], axis=0)  # np.sum((135, 135) x (135, 1), axis=0) = (1, 135)
-
-    dist = cdist(training.T, testing.T, 'sqeuclidean')  # (135, 30)
-    lowd_test = np.zeros((num_test, num_train))
-    for i in range(num_test):
-        lowd_test[i] = np.sum(eigen_vector.T * dist[:, i], axis=0)  # np.sum((135, 135) x (135, 1), axis=0) = (1, 135)
+    lowd_train = W @ K_train  # (25, 135) x (135, 135) = (25, 135)
+    lowd_test = W @ K_test  # (25, 135) x (135, 30) = (25, 30)
 
     k = 15
-    low_dist = cdist(lowd_test, lowd_train, 'euclidean')  # (30 x 135)
-    print(low_dist)
-    show_image(testing[:, 0])
+    low_dist = cdist(lowd_test.T, lowd_train.T, 'euclidean')  # (30 x 135)
     smallest_ids = train_label[np.argsort(low_dist, axis=1)[:, :k]]
     prediction = np.zeros((num_test,), dtype=int)
     for i in range(num_test):
@@ -88,7 +89,5 @@ def kernel_PCA(training, testing, train_label, test_label, kernel_type):
 
 
 if __name__ == '__main__':
-    train, test, train_label, test_label = read_data(
-        '/Users/thethongngu/Documents/machine-learning/ML-hw07/Yale_Face_Database/'
-    )
+    train, test, train_label, test_label = read_data(os.getcwd() + '/Yale_Face_Database/')
     kernel_PCA(train, test, train_label, test_label, 'RBF')
