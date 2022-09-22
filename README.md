@@ -1,3 +1,3 @@
 # machine-learning
 
-Implement multiple machine learning algorithms
+- Implement multiple machine learning algorithms of Machine Learning class
